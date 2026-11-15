@@ -1,0 +1,59 @@
+@api = http://127.0.0.1:3000
+@mock = http://127.0.0.1:3001
+@job_id = REPLACE_FROM_POST_RESPONSE
+@message_id = REPLACE_FROM_POST_RESPONSE
+
+### Health
+GET {{api}}/health
+
+### H0
+POST {{api}}/summaries
+Content-Type: application/json
+X-Correlation-ID: manual-h0
+
+{"video_id":"V1","options":{"language":"vi","style":"short"}}
+
+### Status
+GET {{api}}/summaries/{{job_id}}
+
+### Attempts
+GET {{api}}/summaries/{{job_id}}/attempts
+
+### Current summary
+GET {{api}}/videos/V1/summary
+
+### F2
+POST {{api}}/summaries
+Content-Type: application/json
+
+{"video_id":"V1","options":{"mock":{"status":429,"fail_first":2,"delay_ms":100}}}
+
+### F3: no audio
+POST {{api}}/summaries
+Content-Type: application/json
+
+{"video_id":"V9"}
+
+### F4: persistent failure
+POST {{api}}/summaries
+Content-Type: application/json
+
+{"video_id":"V1","options":{"mock":{"status":503,"delay_ms":100}}}
+
+### Clear fault, then replay
+PUT {{mock}}/faults/{{job_id}}
+Content-Type: application/json
+
+{}
+
+### Replay same message_id
+POST {{api}}/dlq/{{message_id}}/replay
+
+### Durable mock call count
+GET {{mock}}/calls/{{job_id}}
+
+### F8: wait for CHECKPOINT_PAUSED, then docker compose kill -s SIGKILL worker-1
+POST {{api}}/summaries
+Content-Type: application/json
+
+{"video_id":"V1","options":{"pause_at":"after_llm_before_commit","mock":{"delay_ms":100}}}

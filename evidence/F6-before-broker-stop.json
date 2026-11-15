@@ -1,0 +1,136 @@
+{
+  "label": "F6-before-broker-stop",
+  "captured_at": "2026-11-15T10:33:00.251Z",
+  "tables": {
+    "videos": [
+      {
+        "video_id": "V1",
+        "title": "Message Broker",
+        "transcript": "Broker nhận công việc qua publisher confirm, worker ack sau commit.",
+        "has_audio": true,
+        "next_version": 5,
+        "current_version": 0,
+        "current_summary_id": null
+      },
+      {
+        "video_id": "V7",
+        "title": "Ordering",
+        "transcript": "Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
+        "has_audio": true,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      },
+      {
+        "video_id": "V9",
+        "title": "No audio",
+        "transcript": "",
+        "has_audio": false,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      }
+    ],
+    "jobs": [
+      {
+        "job_id": "86877376-5708-4e78-b3ed-657902f0bd1c",
+        "message_id": "29d5685a-c6fe-43dc-bd72-bf8529283a70",
+        "video_id": "V1",
+        "version": 4,
+        "correlation_id": "78025e75-0bbe-4388-a736-f1ad653877dc",
+        "options": {},
+        "status": "QUEUED",
+        "replay_count": 0,
+        "last_error_type": null,
+        "created_at": "2026-11-15T10:33:00.236Z",
+        "completed_at": null
+      },
+      {
+        "job_id": "9590dddc-d757-4105-8cdd-92f0f73137a7",
+        "message_id": "35c3943c-3a2c-43aa-a1a8-88af089e5d91",
+        "video_id": "V1",
+        "version": 5,
+        "correlation_id": "350266e8-f8c5-4ad5-aff3-b0bfce8155ab",
+        "options": {},
+        "status": "QUEUED",
+        "replay_count": 0,
+        "last_error_type": null,
+        "created_at": "2026-11-15T10:33:00.246Z",
+        "completed_at": null
+      },
+      {
+        "job_id": "9e944289-208a-42ce-a865-f84e6e6209ea",
+        "message_id": "587bf559-fc25-4abb-9c3f-5a950c8f9e12",
+        "video_id": "V1",
+        "version": 3,
+        "correlation_id": "1884c737-2b87-4616-bef2-64b53bb8063f",
+        "options": {},
+        "status": "QUEUED",
+        "replay_count": 0,
+        "last_error_type": null,
+        "created_at": "2026-11-15T10:33:00.226Z",
+        "completed_at": null
+      },
+      {
+        "job_id": "bce318af-5532-4c80-b00e-c7aa61596d20",
+        "message_id": "0d0e1c62-4a6a-497d-a032-9b9b057c152c",
+        "video_id": "V1",
+        "version": 1,
+        "correlation_id": "dad0c32e-e65c-49c1-ad67-a174639ac8e3",
+        "options": {},
+        "status": "QUEUED",
+        "replay_count": 0,
+        "last_error_type": null,
+        "created_at": "2026-11-15T10:33:00.198Z",
+        "completed_at": null
+      },
+      {
+        "job_id": "dd31efd6-c4b1-4bcd-9c1f-1aefee47268c",
+        "message_id": "49abb4ef-087f-439b-9d6d-075ae4ff32b3",
+        "video_id": "V1",
+        "version": 2,
+        "correlation_id": "0eaf4bda-fcf5-456d-964f-05127bf9fa4d",
+        "options": {},
+        "status": "QUEUED",
+        "replay_count": 0,
+        "last_error_type": null,
+        "created_at": "2026-11-15T10:33:00.212Z",
+        "completed_at": null
+      }
+    ],
+    "summaries": [],
+    "processing_attempts": [],
+    "replay_events": [],
+    "checkpoint_events": [],
+    "mock_calls": [],
+    "mock_faults": []
+  },
+  "queues": [
+    {
+      "name": "summaries.main",
+      "messages_unacknowledged": 0,
+      "messages_ready": 5
+    },
+    {
+      "name": "summaries.retry.1000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.dlq",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.3000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.9000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    }
+  ],
+  "dlq_messages": []
+}

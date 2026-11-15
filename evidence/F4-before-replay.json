@@ -1,0 +1,212 @@
+{
+  "label": "F4-before-replay",
+  "captured_at": "2026-11-15T10:32:37.532Z",
+  "tables": {
+    "videos": [
+      {
+        "video_id": "V1",
+        "title": "Message Broker",
+        "transcript": "Broker nhận công việc qua publisher confirm, worker ack sau commit.",
+        "has_audio": true,
+        "next_version": 1,
+        "current_version": 0,
+        "current_summary_id": null
+      },
+      {
+        "video_id": "V7",
+        "title": "Ordering",
+        "transcript": "Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
+        "has_audio": true,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      },
+      {
+        "video_id": "V9",
+        "title": "No audio",
+        "transcript": "",
+        "has_audio": false,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      }
+    ],
+    "jobs": [
+      {
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "video_id": "V1",
+        "version": 1,
+        "correlation_id": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
+        "options": {
+          "mock": {
+            "status": 503,
+            "delay_ms": 100
+          }
+        },
+        "status": "DEAD_LETTERED",
+        "replay_count": 0,
+        "last_error_type": "LLM_HTTP_503",
+        "created_at": "2026-11-15T10:32:23.335Z",
+        "completed_at": null
+      }
+    ],
+    "summaries": [],
+    "processing_attempts": [
+      {
+        "attempt_id": "1",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "attempt_no": 1,
+        "replay_generation": 0,
+        "worker_id": "worker-2",
+        "redelivered": false,
+        "started_at": "2026-11-15T10:32:23.625Z",
+        "finished_at": "2026-11-15T10:32:23.812Z",
+        "outcome": "TRANSIENT_ERROR",
+        "error_type": "LLM_HTTP_503"
+      },
+      {
+        "attempt_id": "2",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "attempt_no": 2,
+        "replay_generation": 0,
+        "worker_id": "worker-2",
+        "redelivered": false,
+        "started_at": "2026-11-15T10:32:24.828Z",
+        "finished_at": "2026-11-15T10:32:24.950Z",
+        "outcome": "TRANSIENT_ERROR",
+        "error_type": "LLM_HTTP_503"
+      },
+      {
+        "attempt_id": "3",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "attempt_no": 3,
+        "replay_generation": 0,
+        "worker_id": "worker-1",
+        "redelivered": false,
+        "started_at": "2026-11-15T10:32:27.972Z",
+        "finished_at": "2026-11-15T10:32:28.150Z",
+        "outcome": "TRANSIENT_ERROR",
+        "error_type": "LLM_HTTP_503"
+      },
+      {
+        "attempt_id": "4",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "attempt_no": 4,
+        "replay_generation": 0,
+        "worker_id": "worker-2",
+        "redelivered": false,
+        "started_at": "2026-11-15T10:32:37.161Z",
+        "finished_at": "2026-11-15T10:32:37.281Z",
+        "outcome": "TRANSIENT_ERROR",
+        "error_type": "LLM_HTTP_503"
+      }
+    ],
+    "replay_events": [],
+    "checkpoint_events": [],
+    "mock_calls": [
+      {
+        "call_id": "1",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "call_no": 1,
+        "response_status": 503,
+        "started_at": "2026-11-15T10:32:23.691Z",
+        "finished_at": "2026-11-15T10:32:23.798Z"
+      },
+      {
+        "call_id": "2",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "call_no": 2,
+        "response_status": 503,
+        "started_at": "2026-11-15T10:32:24.842Z",
+        "finished_at": "2026-11-15T10:32:24.945Z"
+      },
+      {
+        "call_id": "3",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "call_no": 3,
+        "response_status": 503,
+        "started_at": "2026-11-15T10:32:28.038Z",
+        "finished_at": "2026-11-15T10:32:28.142Z"
+      },
+      {
+        "call_id": "4",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "call_no": 4,
+        "response_status": 503,
+        "started_at": "2026-11-15T10:32:37.173Z",
+        "finished_at": "2026-11-15T10:32:37.276Z"
+      }
+    ],
+    "mock_faults": [
+      {
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "config": {
+          "status": 503,
+          "delay_ms": 100
+        }
+      }
+    ]
+  },
+  "queues": [
+    {
+      "name": "summaries.main",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.1000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.dlq",
+      "messages_unacknowledged": 0,
+      "messages_ready": 1
+    },
+    {
+      "name": "summaries.retry.3000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.9000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    }
+  ],
+  "dlq_messages": [
+    {
+      "properties": {
+        "contentType": "application/json",
+        "headers": {
+          "attempt_count": 4,
+          "correlation_id": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
+          "error_type": "LLM_HTTP_503"
+        },
+        "deliveryMode": 2,
+        "correlationId": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
+        "messageId": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "type": "SummarizeVideo"
+      },
+      "message": {
+        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "video_id": "V1",
+        "version": 1,
+        "correlation_id": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
+        "created_at": "2026-11-15T10:32:23.335Z",
+        "options": {
+          "mock": {
+            "status": 503,
+            "delay_ms": 100
+          }
+        }
+      }
+    }
+  ]
+}

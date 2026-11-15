@@ -1,0 +1,127 @@
+{
+  "label": "H0",
+  "captured_at": "2026-11-15T10:31:37.073Z",
+  "tables": {
+    "videos": [
+      {
+        "video_id": "V1",
+        "title": "Message Broker",
+        "transcript": "Broker nhận công việc qua publisher confirm, worker ack sau commit.",
+        "has_audio": true,
+        "next_version": 1,
+        "current_version": 1,
+        "current_summary_id": "b5679cd0-ac8d-4fbb-9219-9f5702b55038"
+      },
+      {
+        "video_id": "V7",
+        "title": "Ordering",
+        "transcript": "Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
+        "has_audio": true,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      },
+      {
+        "video_id": "V9",
+        "title": "No audio",
+        "transcript": "",
+        "has_audio": false,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      }
+    ],
+    "jobs": [
+      {
+        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
+        "message_id": "1e3e56ec-4930-44fa-b18b-f1b0aa6ea0e7",
+        "video_id": "V1",
+        "version": 1,
+        "correlation_id": "3151ebf0-60c2-4fd9-954e-b5f75359f259",
+        "options": {
+          "mock": {
+            "delay_ms": 900
+          }
+        },
+        "status": "DONE",
+        "replay_count": 0,
+        "last_error_type": null,
+        "created_at": "2026-11-15T10:31:35.474Z",
+        "completed_at": "2026-11-15T10:31:36.804Z"
+      }
+    ],
+    "summaries": [
+      {
+        "summary_id": "b5679cd0-ac8d-4fbb-9219-9f5702b55038",
+        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
+        "video_id": "V1",
+        "version": 1,
+        "content": "[MOCK; vi; short] Broker nhận công việc qua publisher confirm, worker ack sau commit.",
+        "created_at": "2026-11-15T10:31:36.800Z"
+      }
+    ],
+    "processing_attempts": [
+      {
+        "attempt_id": "1",
+        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
+        "message_id": "1e3e56ec-4930-44fa-b18b-f1b0aa6ea0e7",
+        "attempt_no": 1,
+        "replay_generation": 0,
+        "worker_id": "worker-2",
+        "redelivered": false,
+        "started_at": "2026-11-15T10:31:35.803Z",
+        "finished_at": "2026-11-15T10:31:36.806Z",
+        "outcome": "SUCCEEDED",
+        "error_type": null
+      }
+    ],
+    "replay_events": [],
+    "checkpoint_events": [],
+    "mock_calls": [
+      {
+        "call_id": "1",
+        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
+        "call_no": 1,
+        "response_status": 200,
+        "started_at": "2026-11-15T10:31:35.872Z",
+        "finished_at": "2026-11-15T10:31:36.775Z"
+      }
+    ],
+    "mock_faults": [
+      {
+        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
+        "config": {
+          "delay_ms": 900
+        }
+      }
+    ]
+  },
+  "queues": [
+    {
+      "name": "summaries.main",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.1000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.dlq",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.3000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.9000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    }
+  ],
+  "dlq_messages": []
+}

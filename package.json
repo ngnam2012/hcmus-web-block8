@@ -1,0 +1,24 @@
+{
+  "name": "hcmus-web-block8",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "api": "node src/api.js",
+    "worker": "node src/worker.js",
+    "mock": "node src/mock-llm.js",
+    "test": "node --test test/unit.test.js",
+    "test:integration": "node scripts/scenarios.js automated",
+    "demo": "node scripts/scenarios.js demos",
+    "verify": "node scripts/scenarios.js all",
+    "benchmark": "node scripts/scenarios.js B0",
+    "snapshot": "node scripts/snapshot.js",
+    "report": "node scripts/report.js"
+  },
+  "dependencies": {
+    "amqplib": "0.10.9",
+    "express": "5.1.0",
+    "pg": "8.16.3"
+  }
+}

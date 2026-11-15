@@ -1,0 +1,213 @@
+{
+  "label": "F1-while-killed",
+  "captured_at": "2026-11-15T10:31:58.059Z",
+  "tables": {
+    "videos": [
+      {
+        "video_id": "V1",
+        "title": "Message Broker",
+        "transcript": "Broker nhận công việc qua publisher confirm, worker ack sau commit.",
+        "has_audio": true,
+        "next_version": 1,
+        "current_version": 0,
+        "current_summary_id": null
+      },
+      {
+        "video_id": "V7",
+        "title": "Ordering",
+        "transcript": "Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
+        "has_audio": true,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      },
+      {
+        "video_id": "V9",
+        "title": "No audio",
+        "transcript": "",
+        "has_audio": false,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      }
+    ],
+    "jobs": [
+      {
+        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+        "message_id": "307b8529-b3ae-463f-8590-f7a8d6afec40",
+        "video_id": "V1",
+        "version": 1,
+        "correlation_id": "620051f0-574c-4127-9e0b-6e439a952ad8",
+        "options": {
+          "mock": {
+            "delay_ms": 100
+          },
+          "pause_at": "before_llm_call"
+        },
+        "status": "QUEUED",
+        "replay_count": 0,
+        "last_error_type": null,
+        "created_at": "2026-11-15T10:31:55.978Z",
+        "completed_at": null
+      }
+    ],
+    "summaries": [],
+    "processing_attempts": [
+      {
+        "attempt_id": "1",
+        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+        "message_id": "307b8529-b3ae-463f-8590-f7a8d6afec40",
+        "attempt_no": 1,
+        "replay_generation": 0,
+        "worker_id": "worker-1",
+        "redelivered": false,
+        "started_at": "2026-11-15T10:31:55.995Z",
+        "finished_at": null,
+        "outcome": null,
+        "error_type": null
+      }
+    ],
+    "replay_events": [],
+    "checkpoint_events": [
+      {
+        "checkpoint_id": "1",
+        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+        "worker_id": "worker-1",
+        "marker": "before_llm_call",
+        "process_id": 7,
+        "reached_at": "2026-11-15T10:31:55.999Z"
+      }
+    ],
+    "mock_calls": [],
+    "mock_faults": [
+      {
+        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+        "config": {
+          "delay_ms": 100
+        }
+      }
+    ]
+  },
+  "queues": [
+    {
+      "name": "summaries.main",
+      "messages_unacknowledged": 0,
+      "messages_ready": 1
+    },
+    {
+      "name": "summaries.retry.1000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.dlq",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.3000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.9000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    }
+  ],
+  "dlq_messages": [],
+  "commands": [
+    {
+      "at": "2026-11-15T10:31:16.611Z",
+      "command": "docker compose stop -t 1 worker-1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:17.419Z",
+      "command": "docker compose up -d worker-1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:19.177Z",
+      "command": "docker compose run -d --no-deps --name hcmus-block8-benchmark -p 127.0.0.1:3010:3000 -e APP_VERSION=V0 api",
+      "output": "1923dbae194b81b99dcb82fa4533594f582919b9e807d29016fe9353fdb0d813"
+    },
+    {
+      "at": "2026-11-15T10:31:29.947Z",
+      "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
+      "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+    },
+    {
+      "at": "2026-11-15T10:31:32.789Z",
+      "command": "docker rm -f hcmus-block8-benchmark"
+    },
+    {
+      "at": "2026-11-15T10:31:32.798Z",
+      "command": "docker compose stop -t 1 worker-1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:33.680Z",
+      "command": "docker compose up -d worker-1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:37.097Z",
+      "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
+      "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+    },
+    {
+      "at": "2026-11-15T10:31:39.023Z",
+      "command": "docker compose stop -t 1 worker-1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:39.688Z",
+      "command": "docker compose up -d worker-1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:44.619Z",
+      "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
+      "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+    },
+    {
+      "at": "2026-11-15T10:31:46.156Z",
+      "command": "docker compose stop -t 1 worker-1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:46.913Z",
+      "command": "docker compose up -d worker-1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:55.518Z",
+      "command": "docker compose stop -t 1 worker-2",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:56.193Z",
+      "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
+      "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":1,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+    },
+    {
+      "at": "2026-11-15T10:31:57.597Z",
+      "command": "docker compose kill -s SIGKILL worker-1",
+      "output": ""
+    },
+    {
+      "at": "2026-11-15T10:31:58.077Z",
+      "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
+      "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+    }
+  ],
+  "marker": {
+    "checkpoint_id": "1",
+    "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+    "worker_id": "worker-1",
+    "marker": "before_llm_call",
+    "process_id": 7,
+    "reached_at": "2026-11-15T10:31:55.999Z"
+  }
+}

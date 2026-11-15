@@ -1,0 +1,150 @@
+{
+  "label": "timeout",
+  "captured_at": "2026-11-15T10:33:50.185Z",
+  "tables": {
+    "videos": [
+      {
+        "video_id": "V1",
+        "title": "Message Broker",
+        "transcript": "Broker nhận công việc qua publisher confirm, worker ack sau commit.",
+        "has_audio": true,
+        "next_version": 1,
+        "current_version": 1,
+        "current_summary_id": "7d0aeeb3-828a-485a-aca2-314da4d2182e"
+      },
+      {
+        "video_id": "V7",
+        "title": "Ordering",
+        "transcript": "Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
+        "has_audio": true,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      },
+      {
+        "video_id": "V9",
+        "title": "No audio",
+        "transcript": "",
+        "has_audio": false,
+        "next_version": 0,
+        "current_version": 0,
+        "current_summary_id": null
+      }
+    ],
+    "jobs": [
+      {
+        "job_id": "2b5755b2-4b8c-4b11-a91f-33a7561716b1",
+        "message_id": "5d250973-778c-42fe-ad14-81855e3f2499",
+        "video_id": "V1",
+        "version": 1,
+        "correlation_id": "53c70382-d2cb-4224-914c-c954ec042054",
+        "options": {
+          "mock": {
+            "timeout": true,
+            "fail_first": 1
+          }
+        },
+        "status": "DONE",
+        "replay_count": 0,
+        "last_error_type": null,
+        "created_at": "2026-11-15T10:33:46.825Z",
+        "completed_at": "2026-11-15T10:33:49.925Z"
+      }
+    ],
+    "summaries": [
+      {
+        "summary_id": "7d0aeeb3-828a-485a-aca2-314da4d2182e",
+        "job_id": "2b5755b2-4b8c-4b11-a91f-33a7561716b1",
+        "video_id": "V1",
+        "version": 1,
+        "content": "[MOCK; vi; short] Broker nhận công việc qua publisher confirm, worker ack sau commit.",
+        "created_at": "2026-11-15T10:33:49.922Z"
+      }
+    ],
+    "processing_attempts": [
+      {
+        "attempt_id": "1",
+        "job_id": "2b5755b2-4b8c-4b11-a91f-33a7561716b1",
+        "message_id": "5d250973-778c-42fe-ad14-81855e3f2499",
+        "attempt_no": 1,
+        "replay_generation": 0,
+        "worker_id": "worker-1",
+        "redelivered": false,
+        "started_at": "2026-11-15T10:33:46.881Z",
+        "finished_at": "2026-11-15T10:33:48.397Z",
+        "outcome": "TRANSIENT_ERROR",
+        "error_type": "LLM_TIMEOUT"
+      },
+      {
+        "attempt_id": "2",
+        "job_id": "2b5755b2-4b8c-4b11-a91f-33a7561716b1",
+        "message_id": "5d250973-778c-42fe-ad14-81855e3f2499",
+        "attempt_no": 2,
+        "replay_generation": 0,
+        "worker_id": "worker-2",
+        "redelivered": false,
+        "started_at": "2026-11-15T10:33:49.429Z",
+        "finished_at": "2026-11-15T10:33:49.926Z",
+        "outcome": "SUCCEEDED",
+        "error_type": null
+      }
+    ],
+    "replay_events": [],
+    "checkpoint_events": [],
+    "mock_calls": [
+      {
+        "call_id": "1",
+        "job_id": "2b5755b2-4b8c-4b11-a91f-33a7561716b1",
+        "call_no": 1,
+        "response_status": 408,
+        "started_at": "2026-11-15T10:33:46.982Z",
+        "finished_at": "2026-11-15T10:33:49.488Z"
+      },
+      {
+        "call_id": "2",
+        "job_id": "2b5755b2-4b8c-4b11-a91f-33a7561716b1",
+        "call_no": 2,
+        "response_status": 200,
+        "started_at": "2026-11-15T10:33:49.504Z",
+        "finished_at": "2026-11-15T10:33:49.908Z"
+      }
+    ],
+    "mock_faults": [
+      {
+        "job_id": "2b5755b2-4b8c-4b11-a91f-33a7561716b1",
+        "config": {
+          "timeout": true,
+          "fail_first": 1
+        }
+      }
+    ]
+  },
+  "queues": [
+    {
+      "name": "summaries.main",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.1000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.dlq",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.3000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    },
+    {
+      "name": "summaries.retry.9000",
+      "messages_unacknowledged": 0,
+      "messages_ready": 0
+    }
+  ],
+  "dlq_messages": []
+}

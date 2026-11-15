@@ -1,0 +1,67 @@
+{
+  "mock_delay_ms": 800,
+  "V0": [
+    {
+      "job_id": "76fd3aaa-8c6c-45d2-9cba-c020b4aac6ca",
+      "http_status": 200,
+      "response_ms": 940
+    },
+    {
+      "job_id": "652ad263-206e-4f95-94a4-c80dc5cbdf0a",
+      "http_status": 200,
+      "response_ms": 841
+    },
+    {
+      "job_id": "a40384c2-f724-4b84-be5c-6b849e73b9c8",
+      "http_status": 200,
+      "response_ms": 841
+    },
+    {
+      "job_id": "d4314208-9184-477b-9055-fd52ba132751",
+      "http_status": 200,
+      "response_ms": 842
+    },
+    {
+      "job_id": "5cd837d2-b14f-4990-9e69-ceefa91fc5c1",
+      "http_status": 200,
+      "response_ms": 847
+    }
+  ],
+  "V3": [
+    {
+      "job_id": "3cfd599c-9f65-4822-a5c9-4359f2878ce2",
+      "http_status": 202,
+      "response_ms": 45,
+      "done_after_ms": 1083,
+      "completed_at": "2026-11-15T10:31:25.818Z"
+    },
+    {
+      "job_id": "05fbf554-ed4e-483e-b4bc-c5dc3acc2cf7",
+      "http_status": 202,
+      "response_ms": 15,
+      "done_after_ms": 1012,
+      "completed_at": "2026-11-15T10:31:26.827Z"
+    },
+    {
+      "job_id": "30890526-bb84-44ac-93e2-edfeb2e03a28",
+      "http_status": 202,
+      "response_ms": 19,
+      "done_after_ms": 859,
+      "completed_at": "2026-11-15T10:31:27.755Z"
+    },
+    {
+      "job_id": "684de9bc-22d1-4066-a9fd-bdebe06b03fa",
+      "http_status": 202,
+      "response_ms": 15,
+      "done_after_ms": 871,
+      "completed_at": "2026-11-15T10:31:28.612Z"
+    },
+    {
+      "job_id": "9df41145-c594-4178-a3bc-2f60db7f1f1e",
+      "http_status": 202,
+      "response_ms": 50,
+      "done_after_ms": 957,
+      "completed_at": "2026-11-15T10:31:29.502Z"
+    }
+  ]
+}

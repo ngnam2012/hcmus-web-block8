@@ -1,0 +1,88 @@
+name: hcmus-web-block8
+x-app: &app
+  build: .
+  init: true
+  environment: &env
+    DATABASE_URL: postgres://lab:lab@postgres:5432/broker_lab
+    AMQP_URL: amqp://lab:lab@rabbitmq:5672
+    MOCK_URL: http://mock-llm:3001
+    RABBIT_MANAGEMENT_URL: http://rabbitmq:15672
+    RABBIT_USER: lab
+    RABBIT_PASSWORD: lab
+    LAB_MODE: "true"
+    APP_VERSION: ${APP_VERSION:-V3}
+  depends_on:
+    postgres: { condition: service_healthy }
+    rabbitmq: { condition: service_healthy }
+    mock-llm: { condition: service_healthy }
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: broker_lab
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab
+    ports: ["127.0.0.1:${PG_PORT:-5438}:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/001-init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab -d broker_lab"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  rabbitmq:
+    image: rabbitmq:4.2-management-alpine
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: lab
+      RABBITMQ_DEFAULT_PASS: lab
+    ports:
+      - "127.0.0.1:${AMQP_PORT:-5678}:5672"
+      - "127.0.0.1:${RABBIT_ADMIN_PORT:-15678}:15672"
+    volumes: ["rabbitdata:/var/lib/rabbitmq"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+  mock-llm:
+    <<: *app
+    command: ["node", "src/mock-llm.js"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports: ["127.0.0.1:${MOCK_PORT:-3001}:3001"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  api:
+    <<: *app
+    ports: ["127.0.0.1:${API_PORT:-3000}:3000"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  worker-1:
+    <<: *app
+    command: ["node", "src/worker.js"]
+    environment:
+      <<: *env
+      WORKER_ID: worker-1
+    healthcheck: &worker-health
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  worker-2:
+    <<: *app
+    command: ["node", "src/worker.js"]
+    environment:
+      <<: *env
+      WORKER_ID: worker-2
+    healthcheck: *worker-health
+volumes:
+  pgdata:
+  rabbitdata:
