@@ -1,6 +1,6 @@
 {
   "label": "F3",
-  "captured_at": "2026-11-15T10:32:19.818Z",
+  "captured_at": "2026-11-16T15:08:22.079Z",
   "tables": {
     "videos": [
       {
@@ -33,16 +33,16 @@
     ],
     "jobs": [
       {
-        "job_id": "758520e9-fef5-4139-9a92-e371d19569d3",
-        "message_id": "9886698d-68a9-4512-997c-76ef93e66300",
+        "job_id": "b644a584-30b6-41b7-9e94-dc1dd750d5ab",
+        "message_id": "e1e06ee0-610a-4bef-a28e-d40c392a1fa2",
         "video_id": "V9",
         "version": 1,
-        "correlation_id": "0d2b08c6-0d2f-43fb-8c20-f9389f775f8c",
+        "correlation_id": "1606138e-3308-4298-a196-38679c32087c",
         "options": {},
         "status": "DEAD_LETTERED",
         "replay_count": 0,
         "last_error_type": "NO_AUDIO",
-        "created_at": "2026-11-15T10:32:19.248Z",
+        "created_at": "2026-11-16T15:08:21.525Z",
         "completed_at": null
       }
     ],
@@ -50,14 +50,14 @@
     "processing_attempts": [
       {
         "attempt_id": "1",
-        "job_id": "758520e9-fef5-4139-9a92-e371d19569d3",
-        "message_id": "9886698d-68a9-4512-997c-76ef93e66300",
+        "job_id": "b644a584-30b6-41b7-9e94-dc1dd750d5ab",
+        "message_id": "e1e06ee0-610a-4bef-a28e-d40c392a1fa2",
         "attempt_no": 1,
         "replay_generation": 0,
-        "worker_id": "worker-1",
+        "worker_id": "worker-2",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:19.471Z",
-        "finished_at": "2026-11-15T10:32:19.478Z",
+        "started_at": "2026-11-16T15:08:21.707Z",
+        "finished_at": "2026-11-16T15:08:21.713Z",
         "outcome": "PERMANENT_ERROR",
         "error_type": "NO_AUDIO"
       }
@@ -100,21 +100,21 @@
         "contentType": "application/json",
         "headers": {
           "attempt_count": 1,
-          "correlation_id": "0d2b08c6-0d2f-43fb-8c20-f9389f775f8c",
+          "correlation_id": "1606138e-3308-4298-a196-38679c32087c",
           "error_type": "NO_AUDIO"
         },
         "deliveryMode": 2,
-        "correlationId": "0d2b08c6-0d2f-43fb-8c20-f9389f775f8c",
-        "messageId": "9886698d-68a9-4512-997c-76ef93e66300",
+        "correlationId": "1606138e-3308-4298-a196-38679c32087c",
+        "messageId": "e1e06ee0-610a-4bef-a28e-d40c392a1fa2",
         "type": "SummarizeVideo"
       },
       "message": {
-        "message_id": "9886698d-68a9-4512-997c-76ef93e66300",
-        "job_id": "758520e9-fef5-4139-9a92-e371d19569d3",
+        "message_id": "e1e06ee0-610a-4bef-a28e-d40c392a1fa2",
+        "job_id": "b644a584-30b6-41b7-9e94-dc1dd750d5ab",
         "video_id": "V9",
         "version": 1,
-        "correlation_id": "0d2b08c6-0d2f-43fb-8c20-f9389f775f8c",
-        "created_at": "2026-11-15T10:32:19.248Z",
+        "correlation_id": "1606138e-3308-4298-a196-38679c32087c",
+        "created_at": "2026-11-16T15:08:21.525Z",
         "options": {}
       }
     }

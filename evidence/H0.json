@@ -1,6 +1,6 @@
 {
   "label": "H0",
-  "captured_at": "2026-11-15T10:31:37.073Z",
+  "captured_at": "2026-11-16T15:07:51.721Z",
   "tables": {
     "videos": [
       {
@@ -10,7 +10,7 @@
         "has_audio": true,
         "next_version": 1,
         "current_version": 1,
-        "current_summary_id": "b5679cd0-ac8d-4fbb-9219-9f5702b55038"
+        "current_summary_id": "d4d62acb-98b6-4c72-8320-d5c7c45a4f9c"
       },
       {
         "video_id": "V7",
@@ -33,11 +33,11 @@
     ],
     "jobs": [
       {
-        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
-        "message_id": "1e3e56ec-4930-44fa-b18b-f1b0aa6ea0e7",
+        "job_id": "eca4806d-94de-443c-9151-63af513abe55",
+        "message_id": "7f6cf5d8-a158-4c35-bfcb-5b6dc3f26504",
         "video_id": "V1",
         "version": 1,
-        "correlation_id": "3151ebf0-60c2-4fd9-954e-b5f75359f259",
+        "correlation_id": "6c8cd2ff-3b9e-45b2-849f-02443f4d50b3",
         "options": {
           "mock": {
             "delay_ms": 900
@@ -46,31 +46,31 @@
         "status": "DONE",
         "replay_count": 0,
         "last_error_type": null,
-        "created_at": "2026-11-15T10:31:35.474Z",
-        "completed_at": "2026-11-15T10:31:36.804Z"
+        "created_at": "2026-11-16T15:07:48.907Z",
+        "completed_at": "2026-11-16T15:07:51.349Z"
       }
     ],
     "summaries": [
       {
-        "summary_id": "b5679cd0-ac8d-4fbb-9219-9f5702b55038",
-        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
+        "summary_id": "d4d62acb-98b6-4c72-8320-d5c7c45a4f9c",
+        "job_id": "eca4806d-94de-443c-9151-63af513abe55",
         "video_id": "V1",
         "version": 1,
-        "content": "[MOCK; vi; short] Broker nhận công việc qua publisher confirm, worker ack sau commit.",
-        "created_at": "2026-11-15T10:31:36.800Z"
+        "content": "Message Broker tiếp nhận công việc thông qua cơ chế xác nhận từ nhà xuất bản (publisher confirm). Sau đó, người làm việc (worker) sẽ gửi tín hiệu xác nhận (ack) sau khi hoàn tất quá trình lưu trữ (commit).",
+        "created_at": "2026-11-16T15:07:51.347Z"
       }
     ],
     "processing_attempts": [
       {
         "attempt_id": "1",
-        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
-        "message_id": "1e3e56ec-4930-44fa-b18b-f1b0aa6ea0e7",
+        "job_id": "eca4806d-94de-443c-9151-63af513abe55",
+        "message_id": "7f6cf5d8-a158-4c35-bfcb-5b6dc3f26504",
         "attempt_no": 1,
         "replay_generation": 0,
-        "worker_id": "worker-2",
+        "worker_id": "worker-1",
         "redelivered": false,
-        "started_at": "2026-11-15T10:31:35.803Z",
-        "finished_at": "2026-11-15T10:31:36.806Z",
+        "started_at": "2026-11-16T15:07:49.084Z",
+        "finished_at": "2026-11-16T15:07:51.349Z",
         "outcome": "SUCCEEDED",
         "error_type": null
       }
@@ -80,16 +80,16 @@
     "mock_calls": [
       {
         "call_id": "1",
-        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
+        "job_id": "eca4806d-94de-443c-9151-63af513abe55",
         "call_no": 1,
         "response_status": 200,
-        "started_at": "2026-11-15T10:31:35.872Z",
-        "finished_at": "2026-11-15T10:31:36.775Z"
+        "started_at": "2026-11-16T15:07:49.131Z",
+        "finished_at": "2026-11-16T15:07:51.339Z"
       }
     ],
     "mock_faults": [
       {
-        "job_id": "ffc2b741-bda3-4394-9c74-dd97b06e8ac0",
+        "job_id": "eca4806d-94de-443c-9151-63af513abe55",
         "config": {
           "delay_ms": 900
         }

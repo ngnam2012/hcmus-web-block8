@@ -1,6 +1,6 @@
 {
   "label": "F4",
-  "captured_at": "2026-11-15T10:32:39.809Z",
+  "captured_at": "2026-11-16T15:08:41.439Z",
   "tables": {
     "videos": [
       {
@@ -10,7 +10,7 @@
         "has_audio": true,
         "next_version": 1,
         "current_version": 1,
-        "current_summary_id": "3662f248-5720-45d7-b4a8-1445415a940f"
+        "current_summary_id": "c5d97e2a-15b2-433b-8dfb-c818a99afec5"
       },
       {
         "video_id": "V7",
@@ -33,11 +33,11 @@
     ],
     "jobs": [
       {
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "video_id": "V1",
         "version": 1,
-        "correlation_id": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
+        "correlation_id": "7e4c4e56-cbb8-4c78-9bac-9177e4135059",
         "options": {
           "mock": {
             "status": 503,
@@ -47,83 +47,83 @@
         "status": "DONE",
         "replay_count": 1,
         "last_error_type": null,
-        "created_at": "2026-11-15T10:32:23.335Z",
-        "completed_at": "2026-11-15T10:32:39.537Z"
+        "created_at": "2026-11-16T15:08:25.106Z",
+        "completed_at": "2026-11-16T15:08:41.227Z"
       }
     ],
     "summaries": [
       {
-        "summary_id": "3662f248-5720-45d7-b4a8-1445415a940f",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "summary_id": "c5d97e2a-15b2-433b-8dfb-c818a99afec5",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "video_id": "V1",
         "version": 1,
-        "content": "[MOCK; vi; short] Broker nhận công việc qua publisher confirm, worker ack sau commit.",
-        "created_at": "2026-11-15T10:32:39.535Z"
+        "content": "Broker nhận các công việc thông qua tính năng publisher confirm và worker sẽ thực hiện gửi xác nhận (ack) sau khi đã hoàn thành việc commit dữ liệu.",
+        "created_at": "2026-11-16T15:08:41.226Z"
       }
     ],
     "processing_attempts": [
       {
         "attempt_id": "1",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 1,
         "replay_generation": 0,
         "worker_id": "worker-2",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:23.625Z",
-        "finished_at": "2026-11-15T10:32:23.812Z",
+        "started_at": "2026-11-16T15:08:25.268Z",
+        "finished_at": "2026-11-16T15:08:25.426Z",
         "outcome": "TRANSIENT_ERROR",
         "error_type": "LLM_HTTP_503"
       },
       {
         "attempt_id": "2",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 2,
         "replay_generation": 0,
         "worker_id": "worker-2",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:24.828Z",
-        "finished_at": "2026-11-15T10:32:24.950Z",
+        "started_at": "2026-11-16T15:08:26.435Z",
+        "finished_at": "2026-11-16T15:08:26.552Z",
         "outcome": "TRANSIENT_ERROR",
         "error_type": "LLM_HTTP_503"
       },
       {
         "attempt_id": "3",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 3,
         "replay_generation": 0,
         "worker_id": "worker-1",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:27.972Z",
-        "finished_at": "2026-11-15T10:32:28.150Z",
+        "started_at": "2026-11-16T15:08:29.567Z",
+        "finished_at": "2026-11-16T15:08:29.730Z",
         "outcome": "TRANSIENT_ERROR",
         "error_type": "LLM_HTTP_503"
       },
       {
         "attempt_id": "4",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 4,
         "replay_generation": 0,
         "worker_id": "worker-2",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:37.161Z",
-        "finished_at": "2026-11-15T10:32:37.281Z",
+        "started_at": "2026-11-16T15:08:38.739Z",
+        "finished_at": "2026-11-16T15:08:38.854Z",
         "outcome": "TRANSIENT_ERROR",
         "error_type": "LLM_HTTP_503"
       },
       {
         "attempt_id": "5",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 5,
         "replay_generation": 1,
         "worker_id": "worker-1",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:39.111Z",
-        "finished_at": "2026-11-15T10:32:39.538Z",
+        "started_at": "2026-11-16T15:08:39.956Z",
+        "finished_at": "2026-11-16T15:08:41.228Z",
         "outcome": "SUCCEEDED",
         "error_type": null
       }
@@ -131,57 +131,57 @@
     "replay_events": [
       {
         "replay_id": "1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "generation": 1,
-        "replayed_at": "2026-11-15T10:32:39.094Z"
+        "replayed_at": "2026-11-16T15:08:39.951Z"
       }
     ],
     "checkpoint_events": [],
     "mock_calls": [
       {
         "call_id": "1",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 1,
         "response_status": 503,
-        "started_at": "2026-11-15T10:32:23.691Z",
-        "finished_at": "2026-11-15T10:32:23.798Z"
+        "started_at": "2026-11-16T15:08:25.314Z",
+        "finished_at": "2026-11-16T15:08:25.418Z"
       },
       {
         "call_id": "2",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 2,
         "response_status": 503,
-        "started_at": "2026-11-15T10:32:24.842Z",
-        "finished_at": "2026-11-15T10:32:24.945Z"
+        "started_at": "2026-11-16T15:08:26.444Z",
+        "finished_at": "2026-11-16T15:08:26.547Z"
       },
       {
         "call_id": "3",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 3,
         "response_status": 503,
-        "started_at": "2026-11-15T10:32:28.038Z",
-        "finished_at": "2026-11-15T10:32:28.142Z"
+        "started_at": "2026-11-16T15:08:29.620Z",
+        "finished_at": "2026-11-16T15:08:29.723Z"
       },
       {
         "call_id": "4",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 4,
         "response_status": 503,
-        "started_at": "2026-11-15T10:32:37.173Z",
-        "finished_at": "2026-11-15T10:32:37.276Z"
+        "started_at": "2026-11-16T15:08:38.747Z",
+        "finished_at": "2026-11-16T15:08:38.850Z"
       },
       {
         "call_id": "5",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 5,
         "response_status": 200,
-        "started_at": "2026-11-15T10:32:39.124Z",
-        "finished_at": "2026-11-15T10:32:39.527Z"
+        "started_at": "2026-11-16T15:08:39.962Z",
+        "finished_at": "2026-11-16T15:08:41.220Z"
       }
     ],
     "mock_faults": [
       {
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "config": {}
       }
     ]

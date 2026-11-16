@@ -27,6 +27,11 @@ async function final(name) {
   return data;
 }
 
+const isGemini = () => report.llm?.provider === 'gemini';
+function assertTransientOnly(rows) {
+  assert.ok(rows.every(a => a.outcome === 'TRANSIENT_ERROR'), `Expected only transient retries, got ${rows.map(a => a.outcome)}`);
+}
+
 const scenarios = {
   async H0() {
     const result = await submit('V1', { mock: { delay_ms: 900 } });
@@ -35,40 +40,66 @@ const scenarios = {
     assert.equal(initial.body.status, 'QUEUED', '202 must precede completion');
     const done = await status(result.body.job_id);
     assert.ok(new Date(done.completed_at) > new Date(initial.body.created_at));
-    assert.equal(await calls(done.job_id), 1);
-    assert.deepEqual((await attempts(done.job_id)).map(a => a.outcome), ['SUCCEEDED']);
+    const rows = await attempts(done.job_id);
+    assert.equal(rows.at(-1).outcome, 'SUCCEEDED');
+    if (isGemini()) assertTransientOnly(rows.slice(0, -1));
+    else assert.equal(rows.length, 1);
     const data = await final('H0');
+    assert.equal(data.tables.mock_calls.filter(c => c.response_status === 200).length, 1);
+    if (!isGemini()) assert.equal(data.tables.mock_calls.length, 1);
     assert.equal(data.tables.summaries.length, 1);
     checkEmpty(data);
     return { response_ms: result.elapsed_ms, completed_at: done.completed_at };
   },
   async H1() {
     const jobs = [];
-    for (let i = 0; i < 20; i++) {
-      const result = await submit('V1', { mock: { delay_ms: 200 } });
-      assert.equal(result.status, 202);
-      jobs.push(result.body.job_id);
+    const batches = isGemini() ? [10, 10] : [20];
+    for (const [idx, count] of batches.entries()) {
+      if (idx > 0) await sleep(45000); // Respect Free Tier 15 RPM quota between concurrent batches.
+      const batch = [];
+      for (let i = 0; i < count; i++) {
+        const result = await submit('V1', { mock: { delay_ms: 200 } });
+        assert.equal(result.status, 202);
+        batch.push(result.body.job_id);
+        jobs.push(result.body.job_id);
+      }
+      await Promise.all(batch.map(id => status(id)));
     }
-    await Promise.all(jobs.map(id => status(id)));
     const data = await final('H1');
     assert.equal(data.tables.jobs.filter(j => j.status === 'DONE').length, 20);
     assert.equal(data.tables.summaries.length, 20);
-    assert.equal(data.tables.mock_calls.length, 20);
+    const okCalls = data.tables.mock_calls.filter(c => c.response_status === 200);
+    assert.equal(okCalls.length, 20);
+    if (isGemini()) {
+      assert.ok(data.tables.mock_calls.every(c => [200, 429, 503, 504].includes(c.response_status)), 'unexpected non-transient LLM status in H1');
+    } else {
+      assert.equal(data.tables.mock_calls.length, 20);
+    }
     assert.equal(new Set(data.tables.processing_attempts.map(a => a.worker_id)).size, 2);
     for (const id of jobs) assert.equal(data.tables.processing_attempts.filter(a => a.job_id === id && a.outcome === 'SUCCEEDED').length, 1);
     checkEmpty(data);
+    return {
+      total_llm_calls: data.tables.mock_calls.length,
+      succeeded_calls: okCalls.length,
+      transient_retries: data.tables.mock_calls.length - okCalls.length,
+    };
   },
   async F2() {
     const { body, status: code } = await submit('V1', { mock: { status: 429, fail_first: 2, delay_ms: 100 } });
     assert.equal(code, 202);
     await status(body.job_id);
     const rows = await attempts(body.job_id);
-    assert.deepEqual(rows.map(a => a.outcome), ['TRANSIENT_ERROR', 'TRANSIENT_ERROR', 'SUCCEEDED']);
+    assert.equal(rows[0].outcome, 'TRANSIENT_ERROR');
+    assert.equal(rows[1].outcome, 'TRANSIENT_ERROR');
+    assert.equal(rows.at(-1).outcome, 'SUCCEEDED');
+    if (isGemini()) assertTransientOnly(rows.slice(2, -1));
+    else assert.equal(rows.length, 3);
     const delays = rows.slice(1).map((a, i) => new Date(a.started_at) - new Date(rows[i].finished_at));
     assert.ok(delays[0] >= 950 && delays[1] >= 2950, `Retry delays were ${delays}`);
     assert.ok(delays[0] < 6000 && delays[1] < 9000);
-    assert.equal(await calls(body.job_id), 3);
     const data = await final('F2');
+    assert.equal(data.tables.mock_calls.filter(c => c.response_status === 200).length, 1);
+    if (!isGemini()) assert.equal(data.tables.mock_calls.length, 3);
     assert.equal(data.tables.summaries.length, 1);
     checkEmpty(data);
     return { retry_gaps_ms: delays };
@@ -102,13 +133,14 @@ const scenarios = {
     await status(body.job_id);
     const data = await final('F4');
     assert.equal(data.tables.summaries.length, 1);
-    assert.equal(data.tables.mock_calls.length, 5);
+    assert.equal(data.tables.mock_calls.filter(c => c.response_status === 200).length, 1);
+    if (!isGemini()) assert.equal(data.tables.mock_calls.length, 5);
     assert.equal(data.tables.replay_events.length, 1);
     assert.ok(data.tables.processing_attempts.every(a => a.message_id === body.message_id));
     checkEmpty(data);
   },
   async F7() {
-    const first = await submit('V7', { mock: { delay_ms: 1200 } });
+    const first = await submit('V7', { mock: { delay_ms: 6000 } });
     // Ensure V1 has actually started before submitting V2 to the other worker.
     await until(async () => await calls(first.body.job_id) === 1, 'V1 in LLM');
     const second = await submit('V7', { mock: { delay_ms: 100 } });
@@ -155,8 +187,14 @@ const scenarios = {
     const orphan = data.tables.jobs.find(j => j.job_id === rejected.body.job_id);
     assert.equal(orphan.status, 'QUEUED');
     assert.equal(data.tables.processing_attempts.filter(a => a.job_id === orphan.job_id).length, 0);
-    assert.equal(data.tables.mock_calls.length, 5);
-    return { orphan_job_id: orphan.job_id, http_when_broker_down: rejected.status, accepted_survived: 5, known_gap: 1 };
+    const okCalls = data.tables.mock_calls.filter(c => c.response_status === 200);
+    assert.equal(okCalls.length, 5);
+    if (report.llm?.provider === 'gemini') {
+      assert.ok(data.tables.mock_calls.every(c => [200, 429, 503, 504].includes(c.response_status)));
+    } else {
+      assert.equal(data.tables.mock_calls.length, 5);
+    }
+    return { orphan_job_id: orphan.job_id, http_when_broker_down: rejected.status, accepted_survived: 5, llm_calls_total: data.tables.mock_calls.length, known_gap: 1 };
   },
   async B0() {
     const sync = [], asyncRows = [];
@@ -164,8 +202,13 @@ const scenarios = {
       compose('run', '-d', '--no-deps', '--name', 'hcmus-block8-benchmark', '-p', '127.0.0.1:3010:3000', '-e', 'APP_VERSION=V0', 'api');
       await until(async () => (await request('/health', { base: 'http://127.0.0.1:3010' })).status === 200, 'V0 API');
       for (let i = 0; i < 5; i++) {
-        const start = Date.now();
-        const response = await request('/summaries', { method: 'POST', base: 'http://127.0.0.1:3010', body: { video_id: 'V1', options: { mock: { delay_ms: 800 } } } });
+        let response, start;
+        for (let tries = 0; tries < 4; tries++) {
+          start = Date.now();
+          response = await request('/summaries', { method: 'POST', base: 'http://127.0.0.1:3010', body: { video_id: 'V1', options: { mock: { delay_ms: 800 } } } });
+          if (response.status === 200 || !isGemini() || response.status !== 502) break;
+          await sleep(5000);
+        }
         assert.equal(response.status, 200);
         sync.push({ job_id: response.body.job_id, http_status: response.status, response_ms: Date.now() - start });
       }
@@ -191,9 +234,14 @@ const scenarios = {
     const { body } = await submit('V1', { mock: { timeout: true, fail_first: 1 } });
     await status(body.job_id);
     const rows = await attempts(body.job_id);
-    assert.deepEqual(rows.map(a => a.outcome), ['TRANSIENT_ERROR', 'SUCCEEDED']);
+    assert.equal(rows[0].outcome, 'TRANSIENT_ERROR');
     assert.equal(rows[0].error_type, 'LLM_TIMEOUT');
-    assert.equal(await calls(body.job_id), 2);
+    assert.equal(rows.at(-1).outcome, 'SUCCEEDED');
+    if (isGemini()) assertTransientOnly(rows.slice(1, -1));
+    else {
+      assert.equal(rows.length, 2);
+      assert.equal(await calls(body.job_id), 2);
+    }
     checkEmpty(await final('timeout'));
   },
 };
@@ -220,24 +268,39 @@ async function crashScenario(name, marker, callsAtKill, callsFinal) {
   await workerReady();
   await status(jobId);
   const rows = await attempts(jobId);
-  assert.ok(rows.at(-1).redelivered, 'real RabbitMQ redelivery expected');
-  assert.deepEqual(rows.map(a => a.outcome), name === 'F5' ? ['SUCCEEDED', 'DUPLICATE'] : ['CRASHED', 'SUCCEEDED']);
-  assert.equal(await calls(jobId), callsFinal);
+  assert.ok(rows[1]?.redelivered, 'real RabbitMQ redelivery expected');
   const data = await final(name);
   assert.equal(data.tables.summaries.length, 1);
+  if (name === 'F5') {
+    assert.deepEqual(rows.map(a => a.outcome), ['SUCCEEDED', 'DUPLICATE']);
+    assert.equal(data.tables.mock_calls.length, callsFinal);
+  } else if (report.llm?.provider === 'gemini') {
+    assert.equal(rows[0].outcome, 'CRASHED');
+    assert.equal(rows.at(-1).outcome, 'SUCCEEDED');
+    assert.ok(rows.slice(1, -1).every(a => a.outcome === 'TRANSIENT_ERROR'));
+    assert.equal(data.tables.mock_calls.filter(c => c.response_status === 200).length, callsFinal);
+    assert.ok(data.tables.mock_calls.every(c => [200, 429, 503, 504].includes(c.response_status)));
+  } else {
+    assert.deepEqual(rows.map(a => a.outcome), ['CRASHED', 'SUCCEEDED']);
+    assert.equal(data.tables.mock_calls.length, callsFinal);
+  }
   checkEmpty(data);
-  return { marker, killed_with: 'SIGKILL', mock_calls_before_restart: callsAtKill, mock_calls_final: callsFinal, known_gap: name === 'F8' ? 3 : null };
+  return { marker, killed_with: 'SIGKILL', mock_calls_before_restart: callsAtKill, mock_calls_succeeded: callsFinal, mock_calls_total: data.tables.mock_calls.length, known_gap: name === 'F8' ? 3 : null };
 }
 
 const groups = {
   automated: ['H0', 'F2', 'F3', 'F4', 'F7'],
   demos: ['H1', 'F1', 'F5', 'F6', 'F8'],
-  all: ['B0', 'H0', 'H1', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'timeout'],
+  all: ['B0', 'H0', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'timeout', 'H1'],
 };
 const selected = process.argv[2] || 'automated';
 const names = groups[selected] || [selected];
-const report = { started_at: new Date().toISOString(), selected, results: [] };
+const report = { started_at: new Date().toISOString(), selected, llm: null, results: [] };
 try {
+  try {
+    const health = await request('/health');
+    if (health.status === 200 && health.body?.llm) report.llm = health.body.llm;
+  } catch {}
   for (const name of names) {
     if (!scenarios[name]) throw new Error(`Unknown scenario ${name}`);
     console.log(`RUN ${name} (fresh data)`);

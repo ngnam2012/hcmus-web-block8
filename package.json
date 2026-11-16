@@ -3,20 +3,24 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "api": "node src/api.js",
     "worker": "node src/worker.js",
     "mock": "node src/mock-llm.js",
+    "llm": "node src/mock-llm.js",
     "test": "node --test test/unit.test.js",
-    "test:integration": "node scripts/scenarios.js automated",
-    "demo": "node scripts/scenarios.js demos",
-    "verify": "node scripts/scenarios.js all",
-    "benchmark": "node scripts/scenarios.js B0",
-    "snapshot": "node scripts/snapshot.js",
-    "report": "node scripts/report.js"
+    "test:integration": "node --env-file-if-exists=.env scripts/scenarios.js automated",
+    "demo": "node --env-file-if-exists=.env scripts/scenarios.js demos",
+    "verify": "node --env-file-if-exists=.env scripts/scenarios.js all",
+    "benchmark": "node --env-file-if-exists=.env scripts/scenarios.js B0",
+    "snapshot": "node --env-file-if-exists=.env scripts/snapshot.js",
+    "report": "node --env-file-if-exists=.env scripts/report.js"
   },
   "dependencies": {
+    "@google/genai": "^3.3.0",
     "amqplib": "0.10.9",
     "express": "5.1.0",
     "pg": "8.16.3"

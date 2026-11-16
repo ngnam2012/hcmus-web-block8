@@ -2,7 +2,7 @@
 
 ## Chạy và lấy chứng cứ
 
-`npm.cmd run verify` chạy toàn bộ trên project Compose `hcmus-web-block8`. Cần stack chạy, Node dependencies đã cài. Lệnh này reset **các bảng và queue của lab**, dừng/start worker để mỗi ca độc lập, không tác động project Docker khác. Không chạy song song các ca.
+`npm.cmd run verify` chạy toàn bộ trên project Compose `hcmus-web-block8`. Cần stack chạy, Node dependencies đã cài và `GEMINI_API_KEY` trong `.env` (mặc định `LLM_PROVIDER=gemini`). Lệnh này reset **các bảng và queue của lab**, dừng/start worker để mỗi ca độc lập, không tác động project Docker khác. Không chạy song song các ca. *(Lưu ý: `H1` gửi 20 job liên tiếp; nếu API key Google AI Studio bị giới hạn RPM thấp hơn 20, có thể tạm đổi `LLM_PROVIDER=mock` khi chạy riêng ca tải này.)*
 
 | Ca | Script kiểm tra | Bằng chứng |
 | --- | --- | --- |
@@ -62,4 +62,4 @@ Nếu thay credential Postgres/RabbitMQ, cập nhật cả Compose và URL; volu
 
 ## Phạm vi kiểm tra
 
-Unit test tập trung vào phân loại transient/permanent và giới hạn fault injection. Test tích hợp gọi HTTP thật, đọc PostgreSQL thật, đếm RabbitMQ thật; không mock broker và không suy ra thành công chỉ từ log. Chưa mô phỏng mất disk/network partition hoặc chạy benchmark tải lớn. Không suy ra exactly-once từ bộ test này.
+Unit test tập trung vào phân loại transient/permanent, giới hạn fault injection, validate video động và ánh xạ prompt/lỗi Gemini. Test tích hợp gọi HTTP thật, đọc PostgreSQL thật, đếm RabbitMQ thật, gọi Google Gemini API thật ở các ca thành công và tiêm lỗi ở F2/F4/timeout; không mock broker và không suy ra thành công chỉ từ log. Chưa mô phỏng mất disk/network partition hoặc chạy benchmark tải lớn. Không suy ra exactly-once từ bộ test này.

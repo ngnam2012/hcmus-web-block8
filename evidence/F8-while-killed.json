@@ -1,6 +1,6 @@
 {
   "label": "F8-while-killed",
-  "captured_at": "2026-11-15T10:33:34.388Z",
+  "captured_at": "2026-11-16T15:09:31.598Z",
   "tables": {
     "videos": [
       {
@@ -33,11 +33,11 @@
     ],
     "jobs": [
       {
-        "job_id": "d9661fb9-abcb-4c8d-9b6d-81b8c084dd9e",
-        "message_id": "541393ca-68ca-4deb-8a1c-b72a5b26981e",
+        "job_id": "19e15aa2-7f7d-464e-9c63-da9c4f183972",
+        "message_id": "9bfdf18a-64de-40ce-8129-9b5d4bc5cb92",
         "video_id": "V1",
         "version": 1,
-        "correlation_id": "5d7ff2cb-197f-4625-a7fc-835fc65a0f37",
+        "correlation_id": "fd5d61e2-263c-454a-b685-1a6164981ddf",
         "options": {
           "mock": {
             "delay_ms": 100
@@ -47,7 +47,7 @@
         "status": "QUEUED",
         "replay_count": 0,
         "last_error_type": null,
-        "created_at": "2026-11-15T10:33:32.420Z",
+        "created_at": "2026-11-16T15:09:29.260Z",
         "completed_at": null
       }
     ],
@@ -55,13 +55,13 @@
     "processing_attempts": [
       {
         "attempt_id": "1",
-        "job_id": "d9661fb9-abcb-4c8d-9b6d-81b8c084dd9e",
-        "message_id": "541393ca-68ca-4deb-8a1c-b72a5b26981e",
+        "job_id": "19e15aa2-7f7d-464e-9c63-da9c4f183972",
+        "message_id": "9bfdf18a-64de-40ce-8129-9b5d4bc5cb92",
         "attempt_no": 1,
         "replay_generation": 0,
         "worker_id": "worker-1",
         "redelivered": false,
-        "started_at": "2026-11-15T10:33:32.443Z",
+        "started_at": "2026-11-16T15:09:29.285Z",
         "finished_at": null,
         "outcome": null,
         "error_type": null
@@ -71,26 +71,26 @@
     "checkpoint_events": [
       {
         "checkpoint_id": "1",
-        "job_id": "d9661fb9-abcb-4c8d-9b6d-81b8c084dd9e",
+        "job_id": "19e15aa2-7f7d-464e-9c63-da9c4f183972",
         "worker_id": "worker-1",
         "marker": "after_llm_before_commit",
         "process_id": 7,
-        "reached_at": "2026-11-15T10:33:32.643Z"
+        "reached_at": "2026-11-16T15:09:30.344Z"
       }
     ],
     "mock_calls": [
       {
         "call_id": "1",
-        "job_id": "d9661fb9-abcb-4c8d-9b6d-81b8c084dd9e",
+        "job_id": "19e15aa2-7f7d-464e-9c63-da9c4f183972",
         "call_no": 1,
         "response_status": 200,
-        "started_at": "2026-11-15T10:33:32.512Z",
-        "finished_at": "2026-11-15T10:33:32.622Z"
+        "started_at": "2026-11-16T15:09:29.329Z",
+        "finished_at": "2026-11-16T15:09:30.329Z"
       }
     ],
     "mock_faults": [
       {
-        "job_id": "d9661fb9-abcb-4c8d-9b6d-81b8c084dd9e",
+        "job_id": "19e15aa2-7f7d-464e-9c63-da9c4f183972",
         "config": {
           "delay_ms": 100
         }
@@ -127,281 +127,266 @@
   "dlq_messages": [],
   "commands": [
     {
-      "at": "2026-11-15T10:31:16.611Z",
+      "at": "2026-11-16T15:07:21.192Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:31:17.419Z",
+      "at": "2026-11-16T15:07:21.680Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:31:19.177Z",
+      "at": "2026-11-16T15:07:23.178Z",
       "command": "docker compose run -d --no-deps --name hcmus-block8-benchmark -p 127.0.0.1:3010:3000 -e APP_VERSION=V0 api",
-      "output": "1923dbae194b81b99dcb82fa4533594f582919b9e807d29016fe9353fdb0d813"
+      "output": "2b7ed930eb4ca5e34eed063f553b4423002c817cb5ce3a76b2602e4c89eb75df"
     },
     {
-      "at": "2026-11-15T10:31:29.947Z",
+      "at": "2026-11-16T15:07:45.615Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:31:32.789Z",
+      "at": "2026-11-16T15:07:46.891Z",
       "command": "docker rm -f hcmus-block8-benchmark"
     },
     {
-      "at": "2026-11-15T10:31:32.798Z",
+      "at": "2026-11-16T15:07:46.892Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:31:33.680Z",
+      "at": "2026-11-16T15:07:47.399Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:31:37.097Z",
+      "at": "2026-11-16T15:07:51.729Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:31:39.023Z",
+      "at": "2026-11-16T15:07:52.561Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:31:39.688Z",
+      "at": "2026-11-16T15:07:53.138Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:31:44.619Z",
-      "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-      "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-    },
-    {
-      "at": "2026-11-15T10:31:46.156Z",
-      "command": "docker compose stop -t 1 worker-1 worker-2",
-      "output": ""
-    },
-    {
-      "at": "2026-11-15T10:31:46.913Z",
-      "command": "docker compose up -d worker-1 worker-2",
-      "output": ""
-    },
-    {
-      "at": "2026-11-15T10:31:55.518Z",
+      "at": "2026-11-16T15:08:02.096Z",
       "command": "docker compose stop -t 1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:31:56.193Z",
+      "at": "2026-11-16T15:08:02.619Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":1,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:31:57.597Z",
+      "at": "2026-11-16T15:08:03.485Z",
       "command": "docker compose kill -s SIGKILL worker-1",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:31:58.077Z",
+      "at": "2026-11-16T15:08:03.849Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:31:59.518Z",
+      "at": "2026-11-16T15:08:04.855Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:01.987Z",
+      "at": "2026-11-16T15:08:08.121Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:32:03.485Z",
+      "at": "2026-11-16T15:08:08.917Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:04.113Z",
+      "at": "2026-11-16T15:08:09.338Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:15.526Z",
+      "at": "2026-11-16T15:08:18.671Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:32:16.859Z",
+      "at": "2026-11-16T15:08:19.543Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:17.506Z",
+      "at": "2026-11-16T15:08:20.018Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:19.837Z",
+      "at": "2026-11-16T15:08:22.093Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:32:20.971Z",
+      "at": "2026-11-16T15:08:23.052Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:21.573Z",
+      "at": "2026-11-16T15:08:23.579Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:37.581Z",
+      "at": "2026-11-16T15:08:39.119Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:32:39.826Z",
+      "at": "2026-11-16T15:08:41.451Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:32:41.137Z",
+      "at": "2026-11-16T15:08:42.288Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:41.787Z",
+      "at": "2026-11-16T15:08:42.763Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:43.538Z",
+      "at": "2026-11-16T15:08:44.336Z",
       "command": "docker compose stop -t 1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:44.447Z",
+      "at": "2026-11-16T15:08:46.219Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":1,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:32:45.596Z",
+      "at": "2026-11-16T15:08:47.087Z",
       "command": "docker compose kill -s SIGKILL worker-1",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:46.023Z",
+      "at": "2026-11-16T15:08:47.406Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:32:47.578Z",
+      "at": "2026-11-16T15:08:48.401Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:55.915Z",
+      "at": "2026-11-16T15:08:52.403Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:32:57.144Z",
+      "at": "2026-11-16T15:08:53.219Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:57.799Z",
+      "at": "2026-11-16T15:08:53.739Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:32:59.602Z",
+      "at": "2026-11-16T15:08:55.281Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:00.276Z",
+      "at": "2026-11-16T15:08:55.886Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":5}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:33:01.612Z",
+      "at": "2026-11-16T15:08:56.946Z",
       "command": "docker compose stop rabbitmq",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:06.411Z",
+      "at": "2026-11-16T15:09:01.580Z",
       "command": "docker compose start rabbitmq",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:11.940Z",
+      "at": "2026-11-16T15:09:05.285Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:17.207Z",
+      "at": "2026-11-16T15:09:15.484Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:33:18.618Z",
+      "at": "2026-11-16T15:09:16.347Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:19.362Z",
+      "at": "2026-11-16T15:09:16.890Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:23.101Z",
+      "at": "2026-11-16T15:09:25.969Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:33:24.357Z",
+      "at": "2026-11-16T15:09:26.779Z",
       "command": "docker compose stop -t 1 worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:24.994Z",
+      "at": "2026-11-16T15:09:27.375Z",
       "command": "docker compose up -d worker-1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:31.869Z",
+      "at": "2026-11-16T15:09:28.910Z",
       "command": "docker compose stop -t 1 worker-2",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:32.773Z",
+      "at": "2026-11-16T15:09:30.380Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":1,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     },
     {
-      "at": "2026-11-15T10:33:33.911Z",
+      "at": "2026-11-16T15:09:31.283Z",
       "command": "docker compose kill -s SIGKILL worker-1",
       "output": ""
     },
     {
-      "at": "2026-11-15T10:33:34.411Z",
+      "at": "2026-11-16T15:09:31.607Z",
       "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
       "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
     }
   ],
   "marker": {
     "checkpoint_id": "1",
-    "job_id": "d9661fb9-abcb-4c8d-9b6d-81b8c084dd9e",
+    "job_id": "19e15aa2-7f7d-464e-9c63-da9c4f183972",
     "worker_id": "worker-1",
     "marker": "after_llm_before_commit",
     "process_id": 7,
-    "reached_at": "2026-11-15T10:33:32.643Z"
+    "reached_at": "2026-11-16T15:09:30.344Z"
   }
 }

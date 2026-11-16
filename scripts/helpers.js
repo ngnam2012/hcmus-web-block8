@@ -16,10 +16,10 @@ export function compose(...args) {
   commands.push({ at, command: `docker ${command.join(' ')}`, output: output.trim() });
   return output;
 }
-export async function request(path, { method = 'GET', body, base = apiUrl } = {}) {
+export async function request(path, { method = 'GET', body, base = apiUrl, timeoutMs = 25000 } = {}) {
   const response = await fetch(`${base}${path}`, {
     method, headers: { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(10000),
+    body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs),
   });
   return { status: response.status, body: await response.json() };
 }

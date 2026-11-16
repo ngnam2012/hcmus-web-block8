@@ -10,7 +10,7 @@ flowchart LR
     A -->|3. 202 + status_url| C
     Q -->|prefetch 1; manual ack| W1[Worker 1]
     Q -->|prefetch 1; manual ack| W2[Worker 2]
-    W1 & W2 --> M[Mock LLM]
+    W1 & W2 --> M[LLM Gateway / Gemini]
     W1 & W2 -->|Commit summary, DONE, SUCCEEDED| P
     W1 & W2 -->|Ack sau commit| Q
     W1 & W2 -->|Transient + confirm| R[TTL retry 1s / 3s / 9s]
@@ -36,7 +36,7 @@ flowchart LR
 
 Outcome `NULL` nghĩa là **đang xử lý**, không phải kết quả cuối thứ sáu. Khi delivery tiếp theo giành được job lock, attempt dở được đóng thành CRASHED. Không suy diễn process chết chỉ từ timeout. Bằng chứng tại thời điểm process đang tắt vẫn có attempt outcome NULL; snapshot sau recovery mới có CRASHED. F5 khác: SUCCEEDED đã commit nên không đổi thành CRASHED.
 
-`mock_calls` ghi durable trước khi trả response; do đó worker crash/HTTP timeout không làm mất bộ đếm. Mock delay mặc định 400 ms; cấu hình status 429/503, fail_first, timeout, delay_ms. Timeout worker 1500 ms, fault timeout của mock phản hồi sau 2500 ms. Không có API key/SDK LLM thật.
+`mock_calls` ghi durable trước khi gọi LLM và cập nhật `response_status`/`finished_at` khi xong; do đó worker crash/HTTP timeout không làm mất bộ đếm. Ở chế độ mặc định (`LLM_PROVIDER=gemini`), service tại cổng 3001 gọi Google Gemini API qua `@google/genai` (`interactions.create`) dùng `GEMINI_API_KEY` từ Google AI Studio (mặc định `gemini-3.5-flash-lite`, timeout `LLM_TIMEOUT_MS=15000` ms). Trong `LAB_MODE=true`, bảng `mock_faults` cho phép tiêm lỗi có kiểm soát (`429`, `503`, `timeout`, `delay_ms`) phục vụ kiểm thử F2/F4/F7/timeout mà không lãng phí quota Gemini. Có thể chuyển `LLM_PROVIDER=mock` khi chạy kiểm thử tải offline.
 
 Message `SummarizeVideo`: message_id, job_id, video_id, version, correlation_id, created_at, options. Không chứa binary/video/transcript. Metadata message AMQP cũng có messageId/correlationId/type/contentType.
 

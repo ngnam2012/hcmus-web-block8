@@ -1,6 +1,6 @@
 {
   "label": "F4-before-replay",
-  "captured_at": "2026-11-15T10:32:37.532Z",
+  "captured_at": "2026-11-16T15:08:39.100Z",
   "tables": {
     "videos": [
       {
@@ -33,11 +33,11 @@
     ],
     "jobs": [
       {
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "video_id": "V1",
         "version": 1,
-        "correlation_id": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
+        "correlation_id": "7e4c4e56-cbb8-4c78-9bac-9177e4135059",
         "options": {
           "mock": {
             "status": 503,
@@ -47,7 +47,7 @@
         "status": "DEAD_LETTERED",
         "replay_count": 0,
         "last_error_type": "LLM_HTTP_503",
-        "created_at": "2026-11-15T10:32:23.335Z",
+        "created_at": "2026-11-16T15:08:25.106Z",
         "completed_at": null
       }
     ],
@@ -55,53 +55,53 @@
     "processing_attempts": [
       {
         "attempt_id": "1",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 1,
         "replay_generation": 0,
         "worker_id": "worker-2",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:23.625Z",
-        "finished_at": "2026-11-15T10:32:23.812Z",
+        "started_at": "2026-11-16T15:08:25.268Z",
+        "finished_at": "2026-11-16T15:08:25.426Z",
         "outcome": "TRANSIENT_ERROR",
         "error_type": "LLM_HTTP_503"
       },
       {
         "attempt_id": "2",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 2,
         "replay_generation": 0,
         "worker_id": "worker-2",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:24.828Z",
-        "finished_at": "2026-11-15T10:32:24.950Z",
+        "started_at": "2026-11-16T15:08:26.435Z",
+        "finished_at": "2026-11-16T15:08:26.552Z",
         "outcome": "TRANSIENT_ERROR",
         "error_type": "LLM_HTTP_503"
       },
       {
         "attempt_id": "3",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 3,
         "replay_generation": 0,
         "worker_id": "worker-1",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:27.972Z",
-        "finished_at": "2026-11-15T10:32:28.150Z",
+        "started_at": "2026-11-16T15:08:29.567Z",
+        "finished_at": "2026-11-16T15:08:29.730Z",
         "outcome": "TRANSIENT_ERROR",
         "error_type": "LLM_HTTP_503"
       },
       {
         "attempt_id": "4",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "attempt_no": 4,
         "replay_generation": 0,
         "worker_id": "worker-2",
         "redelivered": false,
-        "started_at": "2026-11-15T10:32:37.161Z",
-        "finished_at": "2026-11-15T10:32:37.281Z",
+        "started_at": "2026-11-16T15:08:38.739Z",
+        "finished_at": "2026-11-16T15:08:38.854Z",
         "outcome": "TRANSIENT_ERROR",
         "error_type": "LLM_HTTP_503"
       }
@@ -111,40 +111,40 @@
     "mock_calls": [
       {
         "call_id": "1",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 1,
         "response_status": 503,
-        "started_at": "2026-11-15T10:32:23.691Z",
-        "finished_at": "2026-11-15T10:32:23.798Z"
+        "started_at": "2026-11-16T15:08:25.314Z",
+        "finished_at": "2026-11-16T15:08:25.418Z"
       },
       {
         "call_id": "2",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 2,
         "response_status": 503,
-        "started_at": "2026-11-15T10:32:24.842Z",
-        "finished_at": "2026-11-15T10:32:24.945Z"
+        "started_at": "2026-11-16T15:08:26.444Z",
+        "finished_at": "2026-11-16T15:08:26.547Z"
       },
       {
         "call_id": "3",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 3,
         "response_status": 503,
-        "started_at": "2026-11-15T10:32:28.038Z",
-        "finished_at": "2026-11-15T10:32:28.142Z"
+        "started_at": "2026-11-16T15:08:29.620Z",
+        "finished_at": "2026-11-16T15:08:29.723Z"
       },
       {
         "call_id": "4",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "call_no": 4,
         "response_status": 503,
-        "started_at": "2026-11-15T10:32:37.173Z",
-        "finished_at": "2026-11-15T10:32:37.276Z"
+        "started_at": "2026-11-16T15:08:38.747Z",
+        "finished_at": "2026-11-16T15:08:38.850Z"
       }
     ],
     "mock_faults": [
       {
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "config": {
           "status": 503,
           "delay_ms": 100
@@ -185,21 +185,21 @@
         "contentType": "application/json",
         "headers": {
           "attempt_count": 4,
-          "correlation_id": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
+          "correlation_id": "7e4c4e56-cbb8-4c78-9bac-9177e4135059",
           "error_type": "LLM_HTTP_503"
         },
         "deliveryMode": 2,
-        "correlationId": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
-        "messageId": "58754b47-ab74-4da6-a182-91ca1bee9708",
+        "correlationId": "7e4c4e56-cbb8-4c78-9bac-9177e4135059",
+        "messageId": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
         "type": "SummarizeVideo"
       },
       "message": {
-        "message_id": "58754b47-ab74-4da6-a182-91ca1bee9708",
-        "job_id": "f7f6075f-46a7-43f0-b097-936fcbffcbf1",
+        "message_id": "7f4e31c1-3ef8-42ca-9f3e-ba25e66bdc67",
+        "job_id": "477775e6-6496-497b-a6b2-cd44725991b0",
         "video_id": "V1",
         "version": 1,
-        "correlation_id": "60c67d10-8253-4b68-b9cf-ef853ef7a928",
-        "created_at": "2026-11-15T10:32:23.335Z",
+        "correlation_id": "7e4c4e56-cbb8-4c78-9bac-9177e4135059",
+        "created_at": "2026-11-16T15:08:25.106Z",
         "options": {
           "mock": {
             "status": 503,

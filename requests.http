@@ -6,6 +6,15 @@
 ### Health
 GET {{api}}/health
 
+### List videos
+GET {{api}}/videos
+
+### Create dynamic video transcript
+POST {{api}}/videos
+Content-Type: application/json
+
+{"video_id":"V-AI","title":"Gioi thieu Message Broker","transcript":"Message broker giup tach API khoi tac vu xu ly nang bang hang doi. API chi luu job va gui message persistent, cho publisher confirm roi tra 202 Accepted ngay cho client."}
+
 ### H0
 POST {{api}}/summaries
 Content-Type: application/json

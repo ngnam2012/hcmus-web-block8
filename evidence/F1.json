@@ -1,6 +1,6 @@
 {
   "label": "F1",
-  "captured_at": "2026-11-15T10:32:01.969Z",
+  "captured_at": "2026-11-16T15:08:08.109Z",
   "tables": {
     "videos": [
       {
@@ -10,7 +10,7 @@
         "has_audio": true,
         "next_version": 1,
         "current_version": 1,
-        "current_summary_id": "3a3238de-3e66-4f3c-88f5-9d524c9cbc34"
+        "current_summary_id": "8382f853-e805-4341-82cb-d77fb9e380c8"
       },
       {
         "video_id": "V7",
@@ -33,11 +33,11 @@
     ],
     "jobs": [
       {
-        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
-        "message_id": "307b8529-b3ae-463f-8590-f7a8d6afec40",
+        "job_id": "08316376-14e6-4aa9-abf8-1275de80deba",
+        "message_id": "0586b023-19ec-4c1f-b825-50217009a1d4",
         "video_id": "V1",
         "version": 1,
-        "correlation_id": "620051f0-574c-4127-9e0b-6e439a952ad8",
+        "correlation_id": "4de0926c-9422-475d-8b31-9150dd938e9a",
         "options": {
           "mock": {
             "delay_ms": 100
@@ -47,44 +47,44 @@
         "status": "DONE",
         "replay_count": 0,
         "last_error_type": null,
-        "created_at": "2026-11-15T10:31:55.978Z",
-        "completed_at": "2026-11-15T10:32:01.648Z"
+        "created_at": "2026-11-16T15:08:02.436Z",
+        "completed_at": "2026-11-16T15:08:07.884Z"
       }
     ],
     "summaries": [
       {
-        "summary_id": "3a3238de-3e66-4f3c-88f5-9d524c9cbc34",
-        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+        "summary_id": "8382f853-e805-4341-82cb-d77fb9e380c8",
+        "job_id": "08316376-14e6-4aa9-abf8-1275de80deba",
         "video_id": "V1",
         "version": 1,
-        "content": "[MOCK; vi; short] Broker nhận công việc qua publisher confirm, worker ack sau commit.",
-        "created_at": "2026-11-15T10:32:01.645Z"
+        "content": "Broker tiếp nhận công việc thông qua xác nhận từ nhà xuất bản (publisher confirm). Worker sẽ tiến hành xác nhận (ack) sau khi đã hoàn tất quá trình commit.",
+        "created_at": "2026-11-16T15:08:07.882Z"
       }
     ],
     "processing_attempts": [
       {
         "attempt_id": "1",
-        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
-        "message_id": "307b8529-b3ae-463f-8590-f7a8d6afec40",
+        "job_id": "08316376-14e6-4aa9-abf8-1275de80deba",
+        "message_id": "0586b023-19ec-4c1f-b825-50217009a1d4",
         "attempt_no": 1,
         "replay_generation": 0,
         "worker_id": "worker-1",
         "redelivered": false,
-        "started_at": "2026-11-15T10:31:55.995Z",
-        "finished_at": "2026-11-15T10:32:01.468Z",
+        "started_at": "2026-11-16T15:08:02.447Z",
+        "finished_at": "2026-11-16T15:08:06.582Z",
         "outcome": "CRASHED",
         "error_type": "PROCESS_LOST"
       },
       {
         "attempt_id": "2",
-        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
-        "message_id": "307b8529-b3ae-463f-8590-f7a8d6afec40",
+        "job_id": "08316376-14e6-4aa9-abf8-1275de80deba",
+        "message_id": "0586b023-19ec-4c1f-b825-50217009a1d4",
         "attempt_no": 2,
         "replay_generation": 0,
         "worker_id": "worker-1",
         "redelivered": true,
-        "started_at": "2026-11-15T10:32:01.471Z",
-        "finished_at": "2026-11-15T10:32:01.648Z",
+        "started_at": "2026-11-16T15:08:06.601Z",
+        "finished_at": "2026-11-16T15:08:07.885Z",
         "outcome": "SUCCEEDED",
         "error_type": null
       }
@@ -93,26 +93,26 @@
     "checkpoint_events": [
       {
         "checkpoint_id": "1",
-        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+        "job_id": "08316376-14e6-4aa9-abf8-1275de80deba",
         "worker_id": "worker-1",
         "marker": "before_llm_call",
         "process_id": 7,
-        "reached_at": "2026-11-15T10:31:55.999Z"
+        "reached_at": "2026-11-16T15:08:02.450Z"
       }
     ],
     "mock_calls": [
       {
         "call_id": "1",
-        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+        "job_id": "08316376-14e6-4aa9-abf8-1275de80deba",
         "call_no": 1,
         "response_status": 200,
-        "started_at": "2026-11-15T10:32:01.530Z",
-        "finished_at": "2026-11-15T10:32:01.633Z"
+        "started_at": "2026-11-16T15:08:06.651Z",
+        "finished_at": "2026-11-16T15:08:07.860Z"
       }
     ],
     "mock_faults": [
       {
-        "job_id": "ad90ed1f-6b64-46d2-a66b-8ac277d2dcbe",
+        "job_id": "08316376-14e6-4aa9-abf8-1275de80deba",
         "config": {
           "delay_ms": 100
         }

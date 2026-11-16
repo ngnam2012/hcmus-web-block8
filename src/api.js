@@ -3,12 +3,21 @@ import { randomUUID } from 'node:crypto';
 import { pool, transaction, withJobLock } from './db.js';
 import { broker } from './broker.js';
 import { config, QUEUE, DLQ } from './config.js';
-import { validateOptions, messageFor, ProcessingError } from './domain.js';
+import { validateOptions, validateVideoInput, messageFor, ProcessingError } from './domain.js';
 import { startAttempt, finishAttempt, callLlm, commitSummary } from './processing.js';
 
+async function fetchLlmHealth() {
+  try {
+    const response = await fetch(`${config.mockUrl}/health`, { signal: AbortSignal.timeout(1500) });
+    if (response.ok) return await response.json();
+  } catch {}
+  return { status: 'unreachable', provider: config.llmProvider, model: config.geminiModel, gemini_configured: Boolean(config.geminiApiKey) };
+}
+
 const app = express();
-app.use(express.json({ limit: '32kb' }));
+app.use(express.json({ limit: '64kb' }));
 app.use(express.static(new URL('../public/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')));
+app.get('/favicon.ico', (_req, res) => res.sendStatus(204));
 app.get('/dashboard', async (_req,res) => {
   const tables={};
   for(const table of ['videos','jobs','summaries','processing_attempts','replay_events','checkpoint_events']) tables[table]=(await pool.query(`SELECT * FROM ${table} ORDER BY 1`)).rows;
@@ -19,7 +28,8 @@ app.get('/dashboard', async (_req,res) => {
   let brokerStats=[];
   try { const response=await fetch(`${process.env.RABBIT_MANAGEMENT_URL || 'http://127.0.0.1:15678'}/api/queues/%2F`,{headers:{authorization:'Basic '+Buffer.from(`${process.env.RABBIT_USER || 'lab'}:${process.env.RABBIT_PASSWORD || 'lab'}`).toString('base64')},signal:AbortSignal.timeout(2000)}); if(response.ok) brokerStats=await response.json(); } catch {}
   for(const q of queues) q.unacked=brokerStats.find(x=>x.name===q.name)?.messages_unacknowledged ?? null;
-  res.json({tables,queues,calls});
+  const llm = await fetchLlmHealth();
+  res.json({tables,queues,calls,llm});
 });
 app.put('/dashboard/faults/:jobId', async(req,res)=>{
   if(!config.labMode) return res.sendStatus(404);
@@ -32,8 +42,30 @@ app.get('/health', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
     await broker.connect();
-    res.json({ status: 'ok', database: true, broker: true, mode: process.env.APP_VERSION || 'V3' });
+    const llm = await fetchLlmHealth();
+    res.json({ status: 'ok', database: true, broker: true, mode: process.env.APP_VERSION || 'V3', llm });
   } catch { res.status(503).json({ status: 'degraded' }); }
+});
+
+app.get('/videos', async (_req, res) => {
+  const { rows } = await pool.query('SELECT video_id, title, transcript, has_audio, next_version, current_version, current_summary_id FROM videos ORDER BY video_id');
+  res.json(rows);
+});
+
+app.post('/videos', async (req, res) => {
+  let video;
+  try { video = validateVideoInput(req.body); }
+  catch (error) { return res.status(400).json({ error: error.message }); }
+  try {
+    const { rows: [created] } = await pool.query(
+      'INSERT INTO videos(video_id,title,transcript,has_audio) VALUES($1,$2,$3,$4) RETURNING *',
+      [video.video_id, video.title, video.transcript, video.has_audio],
+    );
+    return res.status(201).json(created);
+  } catch (error) {
+    if (error?.code === '23505') return res.status(409).json({ error: 'Video ID already exists' });
+    throw error;
+  }
 });
 
 app.post('/summaries', async (req, res) => {

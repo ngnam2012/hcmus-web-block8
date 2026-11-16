@@ -35,7 +35,7 @@ export async function callLlm(client, job) {
   try {
     response = await fetch(`${config.mockUrl}/summarize`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ job_id: job.job_id, transcript: video.transcript, options: job.options }),
+      body: JSON.stringify({ job_id: job.job_id, title: video.title, transcript: video.transcript, options: job.options }),
       signal: AbortSignal.timeout(config.llmTimeoutMs),
     });
   } catch (error) {

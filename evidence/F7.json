@@ -1,6 +1,6 @@
 {
   "label": "F7",
-  "captured_at": "2026-11-15T10:33:23.079Z",
+  "captured_at": "2026-11-16T15:09:25.955Z",
   "tables": {
     "videos": [
       {
@@ -19,7 +19,7 @@
         "has_audio": true,
         "next_version": 2,
         "current_version": 2,
-        "current_summary_id": "e75a2398-d0d0-4186-8a82-a1f5a0d33b6f"
+        "current_summary_id": "2fbf8281-010a-440d-9848-8bb6bc38ce8b"
       },
       {
         "video_id": "V9",
@@ -33,11 +33,11 @@
     ],
     "jobs": [
       {
-        "job_id": "22293df9-992b-4f88-abff-88f2b00ada53",
-        "message_id": "e2d35fe4-30b5-4fc2-b849-4edf2dd97cba",
+        "job_id": "6a5b0916-f086-4976-8c2e-b1adbb5d15b0",
+        "message_id": "3e9ac3ab-a2e1-40c3-80a2-ac769c0544d7",
         "video_id": "V7",
         "version": 2,
-        "correlation_id": "7b584262-3d29-43c6-82d3-3381e035bafb",
+        "correlation_id": "4d58434e-f27a-4107-8779-d736528ef404",
         "options": {
           "mock": {
             "delay_ms": 100
@@ -46,69 +46,69 @@
         "status": "DONE",
         "replay_count": 0,
         "last_error_type": null,
-        "created_at": "2026-11-15T10:33:21.502Z",
-        "completed_at": "2026-11-15T10:33:21.739Z"
+        "created_at": "2026-11-16T15:09:18.763Z",
+        "completed_at": "2026-11-16T15:09:19.987Z"
       },
       {
-        "job_id": "3de032c9-1098-4a60-b03d-64f18a7254ff",
-        "message_id": "236d2f1c-356d-4843-bcbd-c33960942d75",
+        "job_id": "8a1833f2-445d-4eaa-94bd-d47bdc825d1f",
+        "message_id": "cd208671-e143-48c7-a103-9f7c757deb01",
         "video_id": "V7",
         "version": 1,
-        "correlation_id": "3dffecd3-1087-4ee5-9213-22e622832d5e",
+        "correlation_id": "499fa8dc-6e5b-40df-ac37-1ffdb0887121",
         "options": {
           "mock": {
-            "delay_ms": 1200
+            "delay_ms": 6000
           }
         },
         "status": "DONE",
         "replay_count": 0,
         "last_error_type": null,
-        "created_at": "2026-11-15T10:33:21.166Z",
-        "completed_at": "2026-11-15T10:33:22.709Z"
+        "created_at": "2026-11-16T15:09:18.426Z",
+        "completed_at": "2026-11-16T15:09:25.713Z"
       }
     ],
     "summaries": [
       {
-        "summary_id": "dc0396e2-a4c5-41ba-b957-60e4e35b8355",
-        "job_id": "3de032c9-1098-4a60-b03d-64f18a7254ff",
+        "summary_id": "281272df-c498-450a-8004-6908d350a76f",
+        "job_id": "8a1833f2-445d-4eaa-94bd-d47bdc825d1f",
         "video_id": "V7",
         "version": 1,
-        "content": "[MOCK; vi; short] Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
-        "created_at": "2026-11-15T10:33:22.706Z"
+        "content": "Phiên bản lớn nhất đã hoàn tất (DONE) chính là bản tóm tắt hiện tại.",
+        "created_at": "2026-11-16T15:09:25.711Z"
       },
       {
-        "summary_id": "e75a2398-d0d0-4186-8a82-a1f5a0d33b6f",
-        "job_id": "22293df9-992b-4f88-abff-88f2b00ada53",
+        "summary_id": "2fbf8281-010a-440d-9848-8bb6bc38ce8b",
+        "job_id": "6a5b0916-f086-4976-8c2e-b1adbb5d15b0",
         "video_id": "V7",
         "version": 2,
-        "content": "[MOCK; vi; short] Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
-        "created_at": "2026-11-15T10:33:21.736Z"
+        "content": "Bản tóm tắt hiện tại là phiên bản lớn nhất đã hoàn thành (DONE). Nội dung này xác nhận trạng thái cập nhật mới nhất của tài liệu.",
+        "created_at": "2026-11-16T15:09:19.985Z"
       }
     ],
     "processing_attempts": [
       {
         "attempt_id": "1",
-        "job_id": "3de032c9-1098-4a60-b03d-64f18a7254ff",
-        "message_id": "236d2f1c-356d-4843-bcbd-c33960942d75",
+        "job_id": "8a1833f2-445d-4eaa-94bd-d47bdc825d1f",
+        "message_id": "cd208671-e143-48c7-a103-9f7c757deb01",
         "attempt_no": 1,
         "replay_generation": 0,
-        "worker_id": "worker-1",
+        "worker_id": "worker-2",
         "redelivered": false,
-        "started_at": "2026-11-15T10:33:21.416Z",
-        "finished_at": "2026-11-15T10:33:22.711Z",
+        "started_at": "2026-11-16T15:09:18.580Z",
+        "finished_at": "2026-11-16T15:09:25.714Z",
         "outcome": "SUCCEEDED",
         "error_type": null
       },
       {
         "attempt_id": "2",
-        "job_id": "22293df9-992b-4f88-abff-88f2b00ada53",
-        "message_id": "e2d35fe4-30b5-4fc2-b849-4edf2dd97cba",
+        "job_id": "6a5b0916-f086-4976-8c2e-b1adbb5d15b0",
+        "message_id": "3e9ac3ab-a2e1-40c3-80a2-ac769c0544d7",
         "attempt_no": 1,
         "replay_generation": 0,
-        "worker_id": "worker-2",
+        "worker_id": "worker-1",
         "redelivered": false,
-        "started_at": "2026-11-15T10:33:21.548Z",
-        "finished_at": "2026-11-15T10:33:21.740Z",
+        "started_at": "2026-11-16T15:09:18.788Z",
+        "finished_at": "2026-11-16T15:09:19.988Z",
         "outcome": "SUCCEEDED",
         "error_type": null
       }
@@ -118,32 +118,32 @@
     "mock_calls": [
       {
         "call_id": "1",
-        "job_id": "3de032c9-1098-4a60-b03d-64f18a7254ff",
+        "job_id": "8a1833f2-445d-4eaa-94bd-d47bdc825d1f",
         "call_no": 1,
         "response_status": 200,
-        "started_at": "2026-11-15T10:33:21.479Z",
-        "finished_at": "2026-11-15T10:33:22.687Z"
+        "started_at": "2026-11-16T15:09:18.634Z",
+        "finished_at": "2026-11-16T15:09:25.695Z"
       },
       {
         "call_id": "2",
-        "job_id": "22293df9-992b-4f88-abff-88f2b00ada53",
+        "job_id": "6a5b0916-f086-4976-8c2e-b1adbb5d15b0",
         "call_no": 1,
         "response_status": 200,
-        "started_at": "2026-11-15T10:33:21.616Z",
-        "finished_at": "2026-11-15T10:33:21.721Z"
+        "started_at": "2026-11-16T15:09:18.828Z",
+        "finished_at": "2026-11-16T15:09:19.976Z"
       }
     ],
     "mock_faults": [
       {
-        "job_id": "22293df9-992b-4f88-abff-88f2b00ada53",
+        "job_id": "6a5b0916-f086-4976-8c2e-b1adbb5d15b0",
         "config": {
           "delay_ms": 100
         }
       },
       {
-        "job_id": "3de032c9-1098-4a60-b03d-64f18a7254ff",
+        "job_id": "8a1833f2-445d-4eaa-94bd-d47bdc825d1f",
         "config": {
-          "delay_ms": 1200
+          "delay_ms": 6000
         }
       }
     ]
