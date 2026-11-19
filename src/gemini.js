@@ -19,25 +19,41 @@ const STYLE_MAP = {
   detailed: 'detailed (structured bullet points covering key points and conclusion)',
 };
 
-export function buildSummaryPrompt({ title = '', transcript, options = {} }) {
+export function buildSummaryPrompt({ title = '', transcript = '', videoUrl = '', options = {} }) {
   const rawLang = options.language || 'vi';
   const rawStyle = options.style || 'short';
   const language = LANGUAGE_MAP[rawLang] || rawLang;
   const style = STYLE_MAP[rawStyle] || rawStyle;
+  const trimmedTranscript = String(transcript || '').trim();
+  const trimmedUrl = String(videoUrl || '').trim();
 
   const systemInstruction =
-    'You are a precise video transcript summarizer. ' +
-    'Summarize strictly using facts from the provided transcript without inventing information. ' +
+    'You are a precise video summarizer. ' +
+    'Summarize strictly using facts observed in the provided video or transcript without inventing information. ' +
     'Write in the requested language and style, and return only the final summary text.';
 
   const header = title ? `Video title: ${title}\n` : '';
-  const input =
+  if (trimmedTranscript) {
+    const input =
+      `Output language: ${language}\n` +
+      `Summary style: ${style}\n` +
+      `${header}\n` +
+      `Transcript:\n${trimmedTranscript}`;
+    return { systemInstruction, input };
+  }
+
+  const text =
     `Output language: ${language}\n` +
     `Summary style: ${style}\n` +
     `${header}\n` +
-    `Transcript:\n${transcript}`;
-
-  return { systemInstruction, input };
+    'Summarize the attached video accurately based on its audio and visuals.';
+  return {
+    systemInstruction,
+    input: [
+      { type: 'text', text },
+      { type: 'video', uri: trimmedUrl },
+    ],
+  };
 }
 
 export function extractErrorStatus(error) {
@@ -56,20 +72,21 @@ export function extractErrorStatus(error) {
   return 503;
 }
 
-export async function summarizeWithGemini({ title = '', transcript, options = {}, apiKey, model, timeoutMs = 15000 }) {
+export async function summarizeWithGemini({ title = '', transcript = '', videoUrl = '', options = {}, apiKey, model, timeoutMs = 15000 }) {
   if (!apiKey) {
     const err = new Error('GEMINI_API_KEY is not configured');
     err.status = 401;
     throw err;
   }
-  if (!transcript || !transcript.trim()) {
-    const err = new Error('Transcript is empty');
+  if (!String(transcript || '').trim() && !String(videoUrl || '').trim()) {
+    const err = new Error('Transcript and video URL are both empty');
     err.status = 400;
     throw err;
   }
 
   const ai = getClient(apiKey);
-  const { systemInstruction, input } = buildSummaryPrompt({ title, transcript, options });
+  const { systemInstruction, input } = buildSummaryPrompt({ title, transcript, videoUrl, options });
+  const isMultimodal = Array.isArray(input);
 
   const interaction = await ai.interactions.create(
     {
@@ -77,6 +94,7 @@ export async function summarizeWithGemini({ title = '', transcript, options = {}
       system_instruction: systemInstruction,
       input,
       store: false,
+      ...(isMultimodal ? { api_version: 'v1beta' } : {}),
     },
     {
       timeout_ms: timeoutMs,

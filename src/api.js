@@ -1,9 +1,10 @@
 import express from 'express';
 import { randomUUID } from 'node:crypto';
-import { pool, transaction, withJobLock } from './db.js';
+import { pool, transaction, withJobLock, ensureSchema } from './db.js';
 import { broker } from './broker.js';
 import { config, QUEUE, DLQ } from './config.js';
 import { validateOptions, validateVideoInput, messageFor, ProcessingError } from './domain.js';
+import { fetchTranscriptFromLink } from './transcript.js';
 import { startAttempt, finishAttempt, callLlm, commitSummary } from './processing.js';
 
 async function fetchLlmHealth() {
@@ -48,18 +49,44 @@ app.get('/health', async (_req, res) => {
 });
 
 app.get('/videos', async (_req, res) => {
-  const { rows } = await pool.query('SELECT video_id, title, transcript, has_audio, next_version, current_version, current_summary_id FROM videos ORDER BY video_id');
+  const { rows } = await pool.query('SELECT video_id, title, transcript, video_url, has_audio, next_version, current_version, current_summary_id FROM videos ORDER BY video_id');
   res.json(rows);
 });
 
+app.post('/videos/transcript-from-link', async (req, res) => {
+  const url = typeof req.body?.url === 'string' ? req.body.url.trim() : '';
+  const language = typeof req.body?.language === 'string' ? req.body.language.trim() : 'vi';
+  if (!url || url.length > 1000) return res.status(400).json({ error: 'Invalid link URL' });
+  try {
+    const result = await fetchTranscriptFromLink(url, { preferredLang: language || 'vi' });
+    return res.json(result);
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'Không lấy được transcript từ link' });
+  }
+});
+
 app.post('/videos', async (req, res) => {
+  let payload = req.body && typeof req.body === 'object' ? { ...req.body } : req.body;
+  if (payload && typeof payload.video_url === 'string' && payload.video_url.trim() && (!payload.title || (!payload.transcript && payload.auto_fetch === true))) {
+    try {
+      const fetched = await fetchTranscriptFromLink(payload.video_url.trim(), { preferredLang: payload.language || 'vi' });
+      payload = {
+        ...payload,
+        video_url: fetched.video_url,
+        title: payload.title || fetched.title,
+        transcript: payload.transcript || fetched.transcript || '',
+      };
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
   let video;
-  try { video = validateVideoInput(req.body); }
+  try { video = validateVideoInput(payload); }
   catch (error) { return res.status(400).json({ error: error.message }); }
   try {
     const { rows: [created] } = await pool.query(
-      'INSERT INTO videos(video_id,title,transcript,has_audio) VALUES($1,$2,$3,$4) RETURNING *',
-      [video.video_id, video.title, video.transcript, video.has_audio],
+      'INSERT INTO videos(video_id,title,transcript,video_url,has_audio) VALUES($1,$2,$3,$4,$5) RETURNING *',
+      [video.video_id, video.title, video.transcript, video.video_url || null, video.has_audio],
     );
     return res.status(201).json(created);
   } catch (error) {
@@ -162,4 +189,5 @@ app.use((error, _req, res, _next) => {
   console.error('API_ERROR', error.message);
   res.status(error.status || 500).json({ error: error.status === 400 ? 'Invalid JSON' : 'INTERNAL_ERROR' });
 });
+await ensureSchema();
 app.listen(config.apiPort, '0.0.0.0', () => console.log(`API listening on ${config.apiPort}`));

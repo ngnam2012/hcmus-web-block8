@@ -31,12 +31,22 @@ export async function finishAttempt(client, attempt, outcome, errorType = null) 
 export async function callLlm(client, job) {
   const { rows: [video] } = await client.query('SELECT * FROM videos WHERE video_id=$1', [job.video_id]);
   if (!video.has_audio) throw new ProcessingError('NO_AUDIO', false);
+  const directVideoMode = !video.transcript?.trim() && Boolean(video.video_url);
+  const timeoutMs = job.options?.mock?.timeout
+    ? config.llmTimeoutMs
+    : Math.max(config.llmTimeoutMs, directVideoMode ? 60000 : 30000);
   let response;
   try {
     response = await fetch(`${config.mockUrl}/summarize`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ job_id: job.job_id, title: video.title, transcript: video.transcript, options: job.options }),
-      signal: AbortSignal.timeout(config.llmTimeoutMs),
+      body: JSON.stringify({
+        job_id: job.job_id,
+        title: video.title,
+        transcript: video.transcript,
+        video_url: video.video_url || '',
+        options: job.options,
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error) {
     throw new ProcessingError(error.name === 'TimeoutError' ? 'LLM_TIMEOUT' : 'LLM_UNAVAILABLE', true);

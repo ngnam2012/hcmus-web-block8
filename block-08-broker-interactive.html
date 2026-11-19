@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Message broker và xử lý bất đồng bộ</title>
+<meta name="description" content="Học liệu tương tác môn Web Nâng Cao, block 8: chuyển giao công việc qua broker, publisher confirm, ack và redelivery, delivery semantics, prefetch, retry có delay, DLQ và replay, competing consumers, consumer group, ordering, bài thực hành tóm tắt video bằng LLM qua queue.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Lora:wght@500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf7f2;--fg:#302923;--card:#fff;--muted:#f2ede6;--mf:#74685e;--primary:#765343;--accent:#eee2d2;--border:#ded4c7;
+  --bad:#a14238;--bad-bg:#f8e7e3;--good:#4d7a4f;--good-bg:#e6efe2;--blue:#386283;--blue-bg:#e3ecf3;--gold:#a8741f;--gold-bg:#f6ead3;
+  --pc:var(--primary);
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{font-size:26px}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--fg);font-family:'Be Vietnam Pro',system-ui,sans-serif;font-size:1rem;line-height:1.4;-webkit-font-smoothing:antialiased}
+body:before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 100% 0,#e4d2b54d,transparent 55%),radial-gradient(ellipse at 0 100%,#bba38c25,transparent 55%);pointer-events:none}
+h1,h2,h3,h4,p{margin:0}
+h1,h2,h3,h4{font-family:Lora,Georgia,serif;font-weight:700}
+h1{font-size:2.9231rem;line-height:1.05;letter-spacing:-1px}
+h2{font-size:1.7692rem;line-height:1.25;letter-spacing:-.5px}
+h3{font-size:1.1923rem;line-height:1.2}
+h4{font-size:1.0385rem;line-height:1.2}
+code,.mono{font-family:var(--mono);font-size:.88em}
+em{font-style:normal;color:var(--pc);font-weight:600}
+.ic{width:1.1em;height:1.1em;flex:none;vertical-align:-.18em}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+button:disabled{opacity:.35;cursor:default}
+
+/* deck */
+#deck{position:fixed;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(var(--scale,1));transform-origin:center}
+.slide{position:absolute;inset:0;padding:26px 44px 86px;display:flex;flex-direction:column;visibility:hidden;opacity:0;transition:opacity .2s}
+.slide.active{visibility:visible;opacity:1}
+#progress{height:6px;background:var(--pc);position:absolute;top:0;left:0;transition:width .2s;z-index:4}
+.head{display:flex;align-items:center;gap:18px;margin-bottom:16px;min-height:62px}
+.head .sub{font-size:0.8077rem;color:var(--mf);margin-left:auto;max-width:560px;text-align:right;line-height:1.3}
+.part{display:inline-flex;align-items:center;gap:8px;border-radius:99px;padding:6px 16px;background:var(--pc);color:#fff;font-weight:700;font-size:0.7692rem;white-space:nowrap}
+.body{flex:1;min-height:0;display:grid;gap:18px}
+.side{grid-template-columns:1fr 500px}
+.card{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:16px 20px;min-height:0}
+.card h3,.card h4{margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.muted{color:var(--mf)}
+.small{font-size:0.8462rem}
+.tiny{font-size:0.7308rem}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:10px;min-height:0}
+.btn{display:inline-flex;align-items:center;gap:10px;border:2px solid var(--border);background:var(--card);border-radius:12px;padding:9px 16px;font-size:0.8462rem;font-weight:600;transition:background .15s,border-color .15s,transform .08s;text-align:left;line-height:1.2}
+.btn:hover:not(:disabled){background:var(--accent)}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn.pri{background:var(--pc);border-color:var(--pc);color:#fff}
+.btn.pri:hover:not(:disabled){filter:brightness(1.1);background:var(--pc)}
+.btn.bad{color:var(--bad);border-color:#e2bcb5}
+.btn.bad:hover:not(:disabled){background:var(--bad-bg)}
+.btn.on{background:var(--accent);border-color:var(--pc)}
+.btn.sm{padding:6px 12px;font-size:0.7308rem}
+input[type=range]{accent-color:var(--pc);height:30px;width:100%;padding:0}
+.chk{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.chk li{display:flex;gap:12px;align-items:flex-start;padding:8px 12px;border-radius:12px;background:var(--muted);font-size:0.8077rem;line-height:1.3}
+.chk li .st{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--mf)}
+.chk li .st .ic{width:20px;height:20px}
+.code{font-family:var(--mono);font-size:0.7308rem;background:#2c2520;color:#efe6da;border-radius:12px;padding:10px 14px;white-space:pre-wrap;word-break:break-all;line-height:1.4;overflow:auto;margin:0}
+.code .k{color:#e8b77a}.code .v{color:#a8d1a0}.code .x{color:#f1948a}.code .d{color:#9b8f84}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 12px;font-size:0.6923rem;font-weight:700;background:var(--accent);color:var(--primary);font-family:var(--mono)}
+.pill.ok{background:var(--good-bg);color:var(--good)}.pill.no{background:var(--bad-bg);color:var(--bad)}.pill.b{background:var(--blue-bg);color:var(--blue)}.pill.g{background:var(--gold-bg);color:var(--gold)}
+.note{display:flex;gap:12px;align-items:flex-start;background:var(--gold-bg);border-radius:12px;padding:10px 14px;font-size:0.8077rem;line-height:1.35}
+.note .ic{color:var(--gold);margin-top:3px}
+.note.b{background:var(--blue-bg)}.note.b .ic{color:var(--blue)}
+.note.r{background:var(--bad-bg)}.note.r .ic{color:var(--bad)}
+.note.g{background:var(--good-bg)}.note.g .ic{color:var(--good)}
+.note.rule{background:var(--accent)}.note.rule .ic{color:var(--pc)}
+svg text{font-family:'Be Vietnam Pro',sans-serif}
+.dia{width:100%;height:100%;display:block}
+.dia .lbl{font-size:0.8462rem;font-weight:700;fill:var(--fg)}
+.dia .sl{font-size:0.6923rem;fill:var(--mf)}
+.dia .edge{stroke:var(--mf);stroke-width:3;fill:none}
+.hit{cursor:pointer}
+.hit:hover rect{filter:brightness(.97)}
+.halo{paint-order:stroke;stroke:var(--bg);stroke-width:7px;stroke-linejoin:round}
+table.t{border-collapse:separate;border-spacing:0;width:100%;font-size:0.8462rem;background:#fff;border:2px solid var(--border);border-radius:14px;overflow:hidden;line-height:1.3}
+table.t th,table.t td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+table.t th{background:var(--muted);font-weight:700;font-size:0.8077rem}
+table.t tr:last-child td{border-bottom:0}
+table.t td .ic{color:var(--mf)}
+.y{color:var(--good)}.n{color:var(--bad)}
+@keyframes flash{0%{box-shadow:0 0 0 4px var(--pc);background-color:var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+.flash{animation:flash .9s ease-out}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,160%);background:#2c2520;color:#fff;padding:14px 20px;border-radius:14px;display:flex;gap:12px;align-items:center;font-size:0.7692rem;max-width:90vw;transition:transform .25s;z-index:20}
+#toast.show{transform:translate(-50%,0)}
+[data-reveal] .rv{transition:opacity .25s}
+[data-reveal] .rv.hide{opacity:.08}
+
+/* sơ đồ tuần tự và runner */
+.seq{display:grid;grid-template-columns:1fr 430px;gap:18px;min-height:0;height:100%}
+.seq-stage{background:#fff;border:2px solid var(--border);border-radius:16px;padding:4px 8px;min-height:0;display:flex}
+.seq-svg{width:100%;height:100%}
+.seq-side{display:flex;flex-direction:column;gap:10px;min-height:0}
+.seq-var{display:flex;flex-direction:row;flex-wrap:wrap;gap:6px;flex:none}
+.seq-var .btn{flex:none}
+.seq-cap{flex:1;background:#fff;border:2px solid var(--border);border-radius:16px;padding:14px 18px;overflow:auto;min-height:0;font-size:0.8462rem;line-height:1.35}
+.seq-cap .n{font-size:0.6923rem;font-weight:700;color:var(--pc);text-transform:uppercase;letter-spacing:.05em}
+.seq-cap h4{margin:4px 0 8px;font-size:1rem}
+.seq-cap p+p,.seq-cap p+ul,.seq-cap ul+p{margin-top:8px}
+.seq-cap ul{margin:0;padding-left:24px}
+.seq-ctl{display:flex;gap:8px}
+.seq-ctl .pri{flex:1;justify-content:center}
+.seq-svg .actor>rect{fill:var(--muted);stroke:var(--border);stroke-width:2}
+.seq-svg .actor text{font-size:0.8077rem;font-weight:700;fill:var(--fg)}
+.seq-svg .life{stroke:var(--border);stroke-width:2;stroke-dasharray:5 5}
+.seq-svg .st line{stroke-width:3}
+.seq-svg .st text{font-size:0.7692rem;fill:var(--fg);font-weight:500}
+.seq-svg .st .num{font-weight:800}
+.seq-svg .st{transition:opacity .25s}
+.seq-svg .st.future{opacity:.07}
+.seq-svg .st.cur text{font-weight:700}
+.seq-svg .st .self{stroke-width:2}
+.ch-back line{stroke:var(--primary)} .ch-back .self{fill:var(--accent);stroke:var(--primary)}
+.ch-front line{stroke:var(--blue);stroke-dasharray:9 6} .ch-front .self{fill:var(--blue-bg);stroke:var(--blue)}
+.ch-bad line{stroke:var(--bad)} .ch-bad .self{fill:var(--bad-bg);stroke:var(--bad)} .ch-bad text{fill:var(--bad)!important}
+.ch-deny line{stroke:var(--gold)} .ch-deny .self{fill:var(--gold-bg);stroke:var(--gold)}
+.ch-ok line{stroke:var(--good)} .ch-ok .self{fill:var(--good-bg);stroke:var(--good)}
+
+/* nav */
+#nav{position:absolute;left:44px;right:44px;bottom:18px;display:flex;align-items:center;gap:10px;z-index:5}
+#nav .btn{padding:7px 12px}
+#parts{display:flex;gap:6px;margin-left:6px}
+#parts button{border-radius:99px;border:2px solid var(--border);background:var(--card);padding:5px 14px;font-size:0.6923rem;font-weight:700;white-space:nowrap}
+#parts button.on{background:var(--pc);color:#fff;border-color:var(--pc)}
+#count{font-family:var(--mono);font-size:0.7308rem;color:var(--mf);margin-left:auto;white-space:nowrap}
+#title-mini{font-size:0.6923rem;color:var(--mf);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+dialog{border:0;border-radius:18px;padding:26px;width:min(1100px,92vw);max-height:86vh;background:var(--bg);color:var(--fg);box-shadow:0 20px 60px #0004}
+dialog::backdrop{background:#2c252080}
+#overview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+#overview-grid button{text-align:left;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:8px 12px;font-size:0.7308rem;display:flex;gap:10px;align-items:baseline}
+#overview-grid button small{font-family:var(--mono);color:var(--pc);font-weight:700}
+#overview-grid button[aria-current=true]{border-color:var(--pc);background:var(--accent)}
+.obj{display:flex;gap:18px;align-items:center;text-align:left;border:2px solid var(--border);background:#fff;border-radius:16px;padding:20px 24px;font-size:0.9615rem;line-height:1.35}
+.obj:hover{background:var(--accent)}
+.obj .num{flex:none;width:46px;height:46px;border-radius:50%;background:var(--pc);color:#fff;display:grid;place-items:center;font:700 1rem Lora,serif}
+.obj small{display:block;margin-top:8px;font-size:0.6923rem;font-weight:700;color:var(--pc)}
+
+/* block 8 */
+.mini{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px}
+.mini .db{background:#fff;border:2px solid var(--border);border-radius:12px;padding:8px 12px;font-size:0.6923rem;line-height:1.35;min-height:0}
+.mini .db h4{font-size:0.7308rem;margin:0 0 6px;display:flex;gap:6px;align-items:center;font-family:'Be Vietnam Pro',sans-serif}
+.mini .db .r{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:0.6154rem;padding:3px 0;border-bottom:1px dashed var(--border)}
+.mini .db .r:last-child{border-bottom:0}
+.qz{display:grid;grid-template-columns:1fr auto;gap:10px 14px;align-items:center;background:#fff;border:2px solid var(--border);border-radius:14px;padding:10px 16px}
+.qz .t{font-size:0.8077rem;font-weight:600}
+.qz .why{grid-column:1/-1;font-size:0.7308rem}
+.qz .btn{padding:6px 12px;font-size:0.6923rem}
+.qz .btn.y{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+.qz .btn.n{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+#orc-list .btn{padding:7px 12px}
+</style>
+</head>
+<body>
+<div id="deck">
+<div id="progress"></div>
+
+<!-- Bìa -->
+<section class="slide" data-title="Message broker và xử lý bất đồng bộ" data-part="0">
+  <div class="body" style="grid-template-columns:1fr 760px;align-items:center">
+    <div class="col" style="gap:22px">
+      <span class="pill" style="align-self:flex-start;font-family:inherit;font-size:0.8462rem"><span data-icon="inbox"></span>Web Nâng Cao, tuần 6, block 8</span>
+      <h1>Message broker và xử lý bất đồng bộ</h1>
+      <div class="note b" style="font-size:0.7692rem"><span data-icon="video"></span><span><b>Ví dụ dùng trong cả bài:</b> dịch vụ tóm tắt video bằng LLM, API <code>POST /summaries</code>. Slide đầu phần A mô tả API này.</span></div>
+    </div>
+    <svg class="dia" viewBox="0 0 760 560" role="img" aria-label="Năm phần của bài" id="cv-svg"></svg>
+  </div>
+</section>
+
+<!-- Mục tiêu -->
+<section class="slide" data-title="Mục tiêu học tập" data-part="0">
+  <div class="head"><h2>Mục tiêu học tập</h2></div>
+  <div class="body" style="grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:16px">
+    <button class="obj" data-go="a-tradeoff"><span class="num">1</span><span>Nêu được queue mang lại gì và đổi lại phải xử lý những gì; biết API chỉ được trả <code>202</code> sau khi broker xác nhận đã lưu message.<small>Phần A</small></span></button>
+    <button class="obj" data-go="b-why"><span class="num">2</span><span>Giải thích vì sao cần ack, vì sao ack sau commit dẫn tới giao lại message, và cách worker chặn việc làm lặp.<small>Phần B</small></span></button>
+    <button class="obj" data-go="c-flow"><span class="num">3</span><span>Thiết kế retry: lỗi nào thử lại, chờ bao lâu, thử tối đa mấy lần, khi nào đưa vào DLQ, replay ra sao.<small>Phần C</small></span></button>
+    <button class="obj" data-go="d-workers"><span class="num">4</span><span>Chia việc cho nhiều worker mà không làm sai thứ tự xử lý của cùng một video.<small>Phần D</small></span></button>
+    <button class="obj" data-go="e-oracle" style="grid-column:1/-1"><span class="num">5</span><span>Chứng minh hệ thống chạy đúng bằng dữ liệu trong DB và số message trong broker, không chỉ bằng log.<small>Phần E</small></span></button>
+  </div>
+</section>
+
+<!-- A0: bối cảnh API -->
+<section class="slide" data-title="API tóm tắt video, bản đồng bộ" data-part="A" data-id="a-ctx" style="--pc:#765343">
+  <div class="head"><span class="part">A. Queue và 202</span><h2>API tóm tắt video, bản đồng bộ</h2><span class="sub">Hệ thống trước khi có queue</span></div>
+  <div class="body side">
+    <div class="card" style="padding:8px">
+      <svg class="dia" viewBox="0 0 1000 560" role="img" aria-label="Client gọi POST /summaries; API tự làm năm bước, gọi nhà cung cấp LLM và ghi DB rồi mới trả 200">
+        <defs><marker id="ctx-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#74685e"/></marker></defs>
+        <g style="font-family:'Be Vietnam Pro',sans-serif">
+          <rect x="10" y="220" width="160" height="110" rx="14" style="fill:#f2ede6;stroke:#ded4c7;stroke-width:2"/>
+          <text x="90" y="268" text-anchor="middle" style="font-size:0.7692rem;font-weight:700;fill:#302923">Client</text>
+          <text x="90" y="298" text-anchor="middle" style="font-size:0.5769rem;fill:#74685e">web, app</text>
+          <text x="90" y="370" text-anchor="middle" style="font-size:0.5769rem;font-weight:700;fill:#a14238">giữ kết nối HTTP</text>
+          <text x="90" y="396" text-anchor="middle" style="font-size:0.5769rem;font-weight:700;fill:#a14238">trong cả 5 bước</text>
+
+          <line x1="174" y1="250" x2="324" y2="250" style="stroke:#74685e;stroke-width:3" marker-end="url(#ctx-m)"/>
+          <text x="249" y="214" text-anchor="middle" style="font-size:0.5769rem;font-weight:600;fill:#302923;font-family:'JetBrains Mono',monospace">POST /summaries</text>
+          <text x="249" y="238" text-anchor="middle" style="font-size:0.5769rem;fill:#74685e;font-family:'JetBrains Mono',monospace">video_id: V1</text>
+          <line x1="326" y1="310" x2="176" y2="310" style="stroke:#4d7a4f;stroke-width:3" marker-end="url(#ctx-m)"/>
+          <text x="249" y="340" text-anchor="middle" style="font-size:0.5769rem;font-weight:600;fill:#4d7a4f;font-family:'JetBrains Mono',monospace">200 OK</text>
+          <text x="249" y="364" text-anchor="middle" style="font-size:0.5769rem;fill:#4d7a4f">kèm bản tóm tắt</text>
+
+          <rect x="330" y="20" width="370" height="530" rx="16" style="fill:#fff;stroke:#765343;stroke-width:2"/>
+          <text x="515" y="58" text-anchor="middle" style="font-size:0.7692rem;font-weight:700;fill:#765343">API: xử lý trong request</text>
+          <rect x="350" y="80" width="330" height="62" rx="10" style="fill:#f2ede6;stroke:#ded4c7;stroke-width:2"/><text x="366" y="119" style="font-size:0.6538rem;fill:#302923">1. Ghi job J42 vào bảng jobs</text>
+          <rect x="350" y="172" width="330" height="62" rx="10" style="fill:#f2ede6;stroke:#ded4c7;stroke-width:2"/><text x="366" y="211" style="font-size:0.6538rem;fill:#302923">2. Tách âm thanh từ video V1</text>
+          <rect x="350" y="264" width="330" height="62" rx="10" style="fill:#f2ede6;stroke:#ded4c7;stroke-width:2"/><text x="366" y="303" style="font-size:0.6538rem;fill:#302923">3. Chuyển giọng nói thành văn bản</text>
+          <rect x="350" y="356" width="330" height="62" rx="10" style="fill:#eee2d2;stroke:#765343;stroke-width:2"/><text x="366" y="395" style="font-size:0.6538rem;fill:#302923">4. Gửi văn bản cho LLM tóm tắt</text>
+          <rect x="350" y="448" width="330" height="62" rx="10" style="fill:#f2ede6;stroke:#ded4c7;stroke-width:2"/><text x="366" y="487" style="font-size:0.6538rem;fill:#302923">5. Lưu bản tóm tắt, J42 <tspan font-weight="700">DONE</tspan></text>
+          <line x1="515" y1="142" x2="515" y2="166" style="stroke:#74685e;stroke-width:2" marker-end="url(#ctx-m)"/>
+          <line x1="515" y1="234" x2="515" y2="258" style="stroke:#74685e;stroke-width:2" marker-end="url(#ctx-m)"/>
+          <line x1="515" y1="326" x2="515" y2="350" style="stroke:#74685e;stroke-width:2" marker-end="url(#ctx-m)"/>
+          <line x1="515" y1="418" x2="515" y2="442" style="stroke:#74685e;stroke-width:2" marker-end="url(#ctx-m)"/>
+
+          <rect x="760" y="80" width="230" height="230" rx="14" style="fill:#fff;stroke:#ded4c7;stroke-width:2"/>
+          <text x="875" y="118" text-anchor="middle" style="font-size:0.7308rem;font-weight:700;fill:#302923">PostgreSQL</text>
+          <text x="780" y="160" style="font-size:0.5769rem;fill:#74685e;font-family:'JetBrains Mono',monospace">videos</text>
+          <text x="780" y="196" style="font-size:0.5769rem;fill:#74685e;font-family:'JetBrains Mono',monospace">jobs</text>
+          <text x="780" y="232" style="font-size:0.5769rem;fill:#74685e;font-family:'JetBrains Mono',monospace">summaries</text>
+          <line x1="684" y1="111" x2="754" y2="111" style="stroke:#74685e;stroke-width:2" marker-end="url(#ctx-m)"/>
+          <path d="M684,479 H725 V280 H754" style="stroke:#74685e;stroke-width:2;fill:none" marker-end="url(#ctx-m)"/>
+
+          <rect x="760" y="340" width="230" height="160" rx="14" style="fill:#fff;stroke:#a14238;stroke-width:2"/>
+          <text x="875" y="378" text-anchor="middle" style="font-size:0.7308rem;font-weight:700;fill:#302923">Nhà cung cấp LLM</text>
+          <text x="875" y="418" text-anchor="middle" style="font-size:0.5769rem;fill:#a14238">dịch vụ bên ngoài</text>
+          <text x="875" y="446" text-anchor="middle" style="font-size:0.5769rem;fill:#a14238">tính tiền theo token</text>
+          <text x="875" y="474" text-anchor="middle" style="font-size:0.5769rem;fill:#a14238">giới hạn request/phút</text>
+          <line x1="684" y1="387" x2="754" y2="387" style="stroke:#74685e;stroke-width:2" marker-end="url(#ctx-m)"/>
+        </g>
+      </svg>
+    </div>
+    <div class="col" style="gap:10px">
+      <div class="card col" style="gap:8px">
+        <h4><span data-icon="database"></span>Ký hiệu dùng trong bài</h4>
+        <ul class="chk">
+          <li><span class="st"><span data-icon="video"></span></span><span><b>Video</b> V1, V7, V9: file người dùng đã tải lên từ trước, lưu trong bảng <code>videos</code>.</span></li>
+          <li><span class="st"><span data-icon="clipboard-check"></span></span><span><b>Job</b> J42: một yêu cầu tóm tắt. Mỗi lần gọi <code>POST /summaries</code> ghi một dòng vào bảng <code>jobs</code>; job xong khi bản tóm tắt đã lưu.</span></li>
+          <li><span class="st"><span data-icon="sparkles"></span></span><span><b>Bản tóm tắt</b>: kết quả LLM trả về cho một job, lưu trong bảng <code>summaries</code>.</span></li>
+        </ul>
+      </div>
+      <div class="note"><span data-icon="clock"></span><span>Giả định: với video dài vài chục phút, bước 2 đến bước 4 mất khoảng 2 phút. Trong 2 phút đó client vẫn chờ response của <code>POST /summaries</code>.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- A1: request dài -->
+<section class="slide" data-title="Timeout của client khi xử lý đồng bộ" data-part="A" data-id="a-timeout" style="--pc:#765343">
+  <div class="head"><span class="part">A. Queue và 202</span><h2>Timeout của client khi xử lý đồng bộ</h2><span class="sub">Giả định: xử lý một video mất 2 phút</span></div>
+  <div class="body side">
+    <div class="card" style="padding:8px"><svg class="dia" viewBox="0 0 1000 560" id="rq-svg" role="img" aria-label="Diễn biến theo thời gian của client, API, worker và DB"></svg></div>
+    <div class="col" style="gap:10px">
+      <div class="card col" style="gap:8px;padding:12px 16px">
+        <div class="row" id="rq-mode" style="gap:6px"></div>
+        <label class="small" for="rq-t" style="font-weight:700">Client chờ tối đa <span id="rq-v" class="mono"></span> giây</label>
+        <input type="range" id="rq-t" min="15" max="180" step="15" value="60">
+      </div>
+      <div class="card col" id="rq-res" style="flex:1;gap:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- A2: RPC so với giao việc -->
+<section class="slide" data-title="RPC qua broker và giao việc cho worker" data-part="A" data-id="a-rpc" style="--pc:#765343">
+  <div class="head"><span class="part">A. Queue và 202</span><h2>RPC qua broker và giao việc cho worker</h2><span class="sub">Hai cách client chờ kết quả</span></div>
+  <div class="body"><div id="seq-rpc"></div></div>
+</section>
+
+<!-- A3: được gì, mất gì -->
+<section class="slide" data-title="Lợi ích và đánh đổi của queue" data-part="A" data-id="a-tradeoff" style="--pc:#765343" data-reveal>
+  <div class="head"><span class="part">A. Queue và 202</span><h2>Lợi ích và đánh đổi của queue</h2><span class="sub">Mỗi đánh đổi ở cột giữa do một phần của bài xử lý</span></div>
+  <div class="body" style="grid-template-rows:auto auto;align-content:start;gap:14px">
+    <table class="t" style="font-size:0.7692rem">
+      <tr><th style="width:560px">Lợi ích</th><th>Đánh đổi</th><th style="width:150px">Phần</th></tr>
+      <tr data-step="1"><td>Client nhận <code>202</code> sau khi API ghi job, không chờ xử lý xong</td><td>Client phải hỏi lại trạng thái; API phải có thêm trạng thái <code>QUEUED</code></td><td><button class="btn sm" data-go="a-timeout">A1</button></td></tr>
+      <tr data-step="2"><td>Worker có thể đang tắt; message chờ trong queue</td><td><code>202</code> chỉ đúng khi broker đã lưu message, nếu không thì job kẹt ở <code>QUEUED</code></td><td><button class="btn sm" data-go="a-durable">A</button></td></tr>
+      <tr data-step="3"><td>Worker sập thì broker giao việc lại cho worker khác</td><td>Một message có thể được xử lý nhiều lần</td><td><button class="btn sm" data-go="b-why">B</button></td></tr>
+      <tr data-step="4"><td>Lỗi tạm thời được thử lại mà client không phải chờ</td><td>Phải phân loại lỗi, giới hạn số lần thử, có chỗ chứa message không xử lý được</td><td><button class="btn sm" data-go="c-flow">C</button></td></tr>
+      <tr data-step="5"><td>Thêm worker để chia việc, trong giới hạn tần suất của nhà cung cấp LLM</td><td>Một worker có thể giữ nhiều message chưa ack; thứ tự hoàn tất có thể khác thứ tự gửi</td><td><button class="btn sm" data-go="d-workers">D</button></td></tr>
+      <tr data-step="6"><td>Thêm broker vào hệ thống</td><td>Phải kiểm tra thêm số message ở từng queue khi chứng minh hệ thống chạy đúng</td><td><button class="btn sm" data-go="e-oracle">E</button></td></tr>
+      <tr data-step="7"><td></td><td>Ghi job vào DB và publish message là hai bước riêng; API sập giữa hai bước thì job không có message (dual-write)</td><td><button class="btn sm" data-go="q-exit">Block 9</button></td></tr>
+    </table>
+    <div class="note b" data-step="8"><span data-icon="lightbulb"></span><span>Các đánh đổi ở phần A, B, C, D có cách chặn riêng; bảng quy tắc ở cuối phần D gom các cách chặn đó. Dual-write chưa có cách chặn trong block này.</span></div>
+  </div>
+</section>
+
+<!-- A4: vòng đời message -->
+<section class="slide" data-title="Vòng đời một message" data-part="A" data-id="a-life" style="--pc:#765343">
+  <div class="head"><span class="part">A. Queue và 202</span><h2>Vòng đời một message</h2><span class="sub">Các trạng thái của message trong broker</span></div>
+  <div class="body side">
+    <div class="card" style="padding:8px"><svg class="dia" viewBox="0 0 1000 540" id="lc-svg" role="img" aria-label="Các trạng thái của message trong broker"></svg></div>
+    <div class="col" style="gap:10px">
+      <div class="card col" style="gap:6px;padding:12px 16px"><div class="row" id="lc-mode" style="gap:6px"></div></div>
+      <div class="card col" id="lc-cap" style="flex:1;gap:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- A5: khi nào được trả 202 -->
+<section class="slide" data-title="Điều kiện trả 202" data-part="A" data-id="a-durable" style="--pc:#765343">
+  <div class="head"><span class="part">A. Queue và 202</span><h2>Điều kiện trả 202</h2><span class="sub">202 là lời hứa với client: yêu cầu sẽ được xử lý</span></div>
+  <div class="body" style="grid-template-rows:1fr auto"><div id="seq-durable"></div>
+    <div class="note rule"><span data-icon="list-ordered"></span><span><b>Quy tắc 1.</b> Trả <code>202</code> sau publisher confirm, với queue durable và message persistent. Không nhận được confirm trong thời gian chờ thì trả <code>503</code>.</span></div>
+  </div>
+</section>
+
+<!-- B1: vì sao cần ack -->
+<section class="slide" data-title="Vai trò của ack" data-part="B" data-id="b-why" style="--pc:#386283" data-reveal>
+  <div class="head"><span class="part">B. Ack</span><h2>Vai trò của ack</h2><span class="sub">Ví dụ: worker W1 xử lý message M42 của job J42</span></div>
+  <div class="body" style="grid-template-rows:auto auto auto auto auto;align-content:start;gap:12px">
+    <div class="card small" data-step="1"><b>Ack</b> (acknowledgement) là tín hiệu worker gửi về broker để báo đã xử lý xong một message. Nhận ack, broker xóa message khỏi queue. Broker không đọc được DB của worker, nên ngoài ack ra broker không có cách nào biết worker đã làm tới đâu.</div>
+    <svg data-step="2" viewBox="0 0 1500 150" style="width:100%;height:auto;display:block" role="img" aria-label="Bốn bước của W1 và hai thời điểm W1 có thể sập">
+      <defs><marker id="bw-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#74685e"/></marker></defs>
+      <g style="font-family:'Be Vietnam Pro',sans-serif">
+        <rect x="20" y="10" width="280" height="76" rx="12" style="fill:#fff;stroke:#ded4c7;stroke-width:2"/><text x="160" y="42" text-anchor="middle" style="font-size:0.7692rem;font-weight:700;fill:#302923">1. Nhận M42</text><text x="160" y="70" text-anchor="middle" style="font-size:0.6154rem;fill:#74685e">broker giao, M42 chờ ack</text>
+        <rect x="413" y="10" width="280" height="76" rx="12" style="fill:#fff;stroke:#ded4c7;stroke-width:2"/><text x="553" y="42" text-anchor="middle" style="font-size:0.7692rem;font-weight:700;fill:#302923">2. Gọi LLM</text><text x="553" y="70" text-anchor="middle" style="font-size:0.6154rem;fill:#74685e">tốn tiền token</text>
+        <rect x="806" y="10" width="280" height="76" rx="12" style="fill:#fff;stroke:#ded4c7;stroke-width:2"/><text x="946" y="42" text-anchor="middle" style="font-size:0.7692rem;font-weight:700;fill:#302923">3. Commit vào DB</text><text x="946" y="70" text-anchor="middle" style="font-size:0.6154rem;fill:#74685e">bản tóm tắt, J42 DONE</text>
+        <rect x="1199" y="10" width="280" height="76" rx="12" style="fill:#fff;stroke:#ded4c7;stroke-width:2"/><text x="1339" y="42" text-anchor="middle" style="font-size:0.7692rem;font-weight:700;fill:#302923">4. Gửi ack</text><text x="1339" y="70" text-anchor="middle" style="font-size:0.6154rem;fill:#74685e">broker xóa M42</text>
+        <line x1="304" y1="48" x2="407" y2="48" style="stroke:#74685e;stroke-width:3" marker-end="url(#bw-m)"/>
+        <line x1="697" y1="48" x2="800" y2="48" style="stroke:#74685e;stroke-width:3" marker-end="url(#bw-m)"/>
+        <line x1="1090" y1="48" x2="1193" y2="48" style="stroke:#74685e;stroke-width:3" marker-end="url(#bw-m)"/>
+        <line x1="750" y1="0" x2="750" y2="104" style="stroke:#a14238;stroke-width:3;stroke-dasharray:6 5"/><text x="750" y="136" text-anchor="middle" style="font-size:0.6538rem;font-weight:700;fill:#a14238">sập lúc (a): trước commit</text>
+        <line x1="1142" y1="0" x2="1142" y2="104" style="stroke:#a14238;stroke-width:3;stroke-dasharray:6 5"/><text x="1142" y="136" text-anchor="middle" style="font-size:0.6538rem;font-weight:700;fill:#a14238">sập lúc (b): sau commit, trước ack</text>
+      </g>
+    </svg>
+    <table class="t" style="font-size:0.7692rem">
+      <tr data-step="3"><th style="width:380px">Broker xóa M42 khi nào</th><th>W1 sập lúc (a)</th><th>W1 sập lúc (b)</th></tr>
+      <tr data-step="3"><td><b>Ngay khi giao</b> (auto-ack, bỏ qua bước 4)</td><td class="n">M42 đã bị xóa, không worker nào làm lại; J42 kẹt ở <code>QUEUED</code></td><td>Bản tóm tắt đã có; không ảnh hưởng</td></tr>
+      <tr data-step="4"><td><b>Khi nhận ack</b> ở bước 4</td><td>M42 còn trong broker nên được giao lại; worker làm lại từ đầu và gọi LLM thêm một lần</td><td class="n">M42 được giao lại dù việc đã xong; worker phải nhận ra để không gọi LLM và không lưu bản tóm tắt thứ hai</td></tr>
+    </table>
+    <div class="note b" data-step="5"><span data-icon="lightbulb"></span><span>Lab chọn hàng dưới: ack sau commit. Lỗi ở hàng trên không phát hiện được, vì M42 đã bị xóa nên không worker nào biết J42 còn dở. Ô (b) hàng dưới chặn được: khi nhận lại M42, worker đọc J42 trong DB, thấy đã <code>DONE</code> thì bỏ qua. Ô (a) hàng dưới thì không: LLM đã bị gọi trước khi commit, DB không chặn được lời gọi đã gửi ra ngoài (khoảng hở 3, ca F8).</span></div>
+    <div class="note rule" data-step="6"><span data-icon="list-ordered"></span><span><b>Quy tắc 2.</b> Tắt auto-ack, gửi ack sau commit. <b>Quy tắc 3.</b> Worker chỉ xử lý khi job còn <code>QUEUED</code>, bảng <code>summaries</code> có UNIQUE(job_id), lần nhận lại ghi <code>DUPLICATE</code> rồi ack, không gọi LLM. Worker xét trạng thái J42 trong DB, không xét cờ <code>redelivered</code>: cờ này chỉ cho biết message từng được giao, không cho biết đã xử lý xong hay chưa.</span></div>
+  </div>
+</section>
+
+<!-- B3: delivery semantics -->
+<section class="slide" data-title="Ba mức bảo đảm khi giao message" data-part="B" data-id="b-sem" style="--pc:#386283" data-reveal>
+  <div class="head"><span class="part">B. Ack</span><h2>Ba mức bảo đảm khi giao message</h2></div>
+  <div class="body" style="grid-template-rows:auto auto;align-content:start;gap:14px">
+    <table class="t">
+      <tr><th style="width:230px">Mức</th><th>Cách làm trong lab</th><th>Khi worker sập</th><th style="width:360px">Worker phải làm gì</th></tr>
+      <tr data-step="1"><td><b>At-most-once</b></td><td>Auto-ack, hoặc ack trước khi commit</td><td class="n">Việc có thể mất, broker không giao lại</td><td>Chỉ dùng khi mất việc không gây hại, ví dụ đếm lượt xem gần đúng</td></tr>
+      <tr data-step="2"><td><b>At-least-once</b></td><td>Ack sau khi commit</td><td>Không mất việc, nhưng một message có thể đến nhiều lần</td><td>Kiểm tra trạng thái job trước khi làm, dùng ràng buộc UNIQUE, ghi <code>DUPLICATE</code> khi nhận lại</td></tr>
+      <tr data-step="3"><td><b>Exactly-once</b></td><td>Lab không dùng</td><td>Chỉ đúng trong phạm vi sản phẩm cam kết</td><td>Kafka transactions chỉ bảo đảm cho chuỗi đọc, xử lý, ghi nằm trong Kafka. Lời gọi LLM đã tính tiền hay email đã gửi nằm ngoài phạm vi đó.</td></tr>
+    </table>
+    <div class="note b" data-step="4"><span data-icon="lightbulb"></span><span>Ack chỉ báo cho broker biết không cần giao lại message. Ack không chứng minh nghiệp vụ đã chạy đúng; khi message bị giao lại, worker phải tự tránh làm hai lần.</span></div>
+  </div>
+</section>
+
+<!-- C1: đường đi của message bị lỗi -->
+<section class="slide" data-title="Đường đi của message bị lỗi" data-part="C" data-id="c-flow" style="--pc:#a8741f" data-reveal>
+  <div class="head"><span class="part">C. Retry, DLQ</span><h2>Đường đi của message bị lỗi</h2><span class="sub">Worker còn chạy, lần xử lý M42 báo lỗi</span></div>
+  <div class="body side" style="grid-template-columns:1fr 560px;grid-template-rows:1fr auto">
+    <div class="card" style="padding:8px"><svg class="dia" viewBox="0 0 1000 520" id="cf-svg" role="img" aria-label="Message lỗi đi qua retry queue hoặc DLQ"></svg></div>
+    <div class="col" style="gap:8px">
+      <ul class="chk">
+        <li data-step="1"><span class="st"><span data-icon="clock"></span></span><span><b>Retry queue</b> <code>summaries.retry</code>: queue giữ message trong lúc chờ thử lại; hết thời gian chờ, broker tự chuyển message về <code>summaries</code>. RabbitMQ làm việc này bằng TTL và dead-letter exchange.</span></li>
+        <li data-step="2"><span class="st"><span data-icon="repeat"></span></span><span><b>Giới hạn số lần:</b> tối đa 4 lần xử lý cho một message, chờ 1, 3, 9 giây giữa các lần (giả định của lab). Số lần đếm trong bảng <code>processing_attempts</code>.</span></li>
+        <li data-step="3"><span class="st"><span data-icon="archive"></span></span><span><b>DLQ</b> (dead letter queue) <code>summaries.dlq</code>: queue giữ message không xử lý được, kèm loại lỗi và số lần đã thử. Job chuyển sang <code>DEAD_LETTERED</code> để client biết job đã dừng.</span></li>
+        <li data-step="4"><span class="st"><span data-icon="rotate-ccw"></span></span><span><b>Replay:</b> sửa xong nguyên nhân, người vận hành đưa message từ DLQ về <code>summaries</code>, giữ nguyên <code>message_id</code>.</span></li>
+      </ul>
+      <div class="note b" data-step="5"><span data-icon="lightbulb"></span><span>Mỗi job kết thúc ở <code>DONE</code> hoặc <code>DEAD_LETTERED</code>, không kẹt ở <code>QUEUED</code>.</span></div>
+    </div>
+    <div class="note rule" data-step="6" style="grid-column:1/-1"><span data-icon="list-ordered"></span><span><b>Quy tắc 4 đến 7.</b> Lỗi tạm thời: chờ 1, 3, 9 giây rồi thử lại, không trả message về queue ngay. Đếm số lần trong <code>processing_attempts</code>, tối đa 4. Lỗi vĩnh viễn hoặc hết lượt: job <code>DEAD_LETTERED</code>, message vào DLQ. Replay giữ nguyên <code>message_id</code>.</span></div>
+  </div>
+</section>
+
+<!-- C2: phân loại lỗi -->
+<section class="slide" data-title="Phân loại lỗi" data-part="C" data-id="c-class" style="--pc:#a8741f">
+  <div class="head"><span class="part">C. Retry, DLQ</span><h2>Phân loại lỗi</h2><span class="sub" id="cl-score"></span></div>
+  <div class="body" style="align-content:start;gap:8px" id="cl-q"></div>
+</section>
+
+<!-- D1: nhiều worker trên một queue -->
+<section class="slide" data-title="Nhiều worker trên một queue" data-part="D" data-id="d-workers" style="--pc:#5d6f3a">
+  <div class="head"><span class="part">D. Nhiều worker</span><h2>Nhiều worker trên một queue</h2><span class="sub">6 message của 3 video V1, V2, V3</span></div>
+  <div class="body side">
+    <div class="card" style="padding:8px"><svg class="dia" viewBox="0 0 1000 560" id="ds-svg" role="img" aria-label="Một queue chia message cho hai worker"></svg></div>
+    <div class="col" style="gap:10px">
+      <div class="note"><span data-icon="clock"></span><span>Giả định của lab: mỗi video mất 2 phút, có 20 job đang chờ. Một worker xử lý hết trong 40 phút; hai worker mất khoảng 20 phút, nếu hạn mức của nhà cung cấp LLM cho phép hai lời gọi song song.</span></div>
+      <div class="card col small" style="gap:8px">
+        <div>Broker chia message trong queue cho các worker đang kết nối; mỗi message chỉ giao cho một worker. Mô hình này gọi là competing consumers.</div>
+        <div style="font-weight:700">Hai hệ quả:</div>
+        <ul class="chk">
+          <li><span class="st">1</span><span>Mỗi worker giữ bao nhiêu message chưa ack cùng lúc: prefetch, slide sau.</span></li>
+          <li><span class="st">2</span><span>M1 và M4 cùng là yêu cầu tóm tắt video V1 nhưng nằm ở hai worker, có thể chạy song song, nên thứ tự hoàn tất có thể khác thứ tự gửi.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- D2: prefetch -->
+<section class="slide" data-title="Prefetch của worker" data-part="D" data-id="d-prefetch" style="--pc:#5d6f3a">
+  <div class="head"><span class="part">D. Nhiều worker</span><h2>Prefetch của worker</h2><span class="sub">Giả định: 20 job chờ, 2 phút mỗi job</span></div>
+  <div class="body side">
+    <div class="card" style="padding:8px"><svg class="dia" viewBox="0 0 1000 560" id="pf-svg" role="img" aria-label="Queue và hai worker theo prefetch"></svg></div>
+    <div class="col" style="gap:10px">
+      <div class="card col" style="gap:8px;padding:12px 16px">
+        <label class="small" for="pf-n" style="font-weight:700">Prefetch của mỗi worker: <span id="pf-v" class="mono"></span></label>
+        <input type="range" id="pf-n" min="1" max="20" value="1">
+        <div class="row" style="gap:6px"><button class="btn sm bad" id="pf-kill"><span data-icon="power-off"></span>W1 sập</button><button class="btn sm" id="pf-reset"><span data-icon="rotate-ccw"></span>Làm lại</button></div>
+      </div>
+      <div class="card col" id="pf-res" style="flex:1;gap:8px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- D3: ordering -->
+<section class="slide" data-title="Thứ tự giao và thứ tự commit" data-part="D" data-id="d-order" style="--pc:#5d6f3a">
+  <div class="head"><span class="part">D. Nhiều worker</span><h2>Thứ tự giao và thứ tự commit</h2><span class="sub">Hai yêu cầu tóm tắt video V7, ca F7 trong lab</span></div>
+  <div class="body side" style="grid-template-rows:1fr auto">
+    <div class="card" style="padding:8px"><svg class="dia" viewBox="0 0 1000 560" id="od-svg" role="img" aria-label="Diễn biến của hai worker và bản tóm tắt hiện tại của V7"></svg></div>
+    <div class="col" style="gap:10px">
+      <div class="card col" style="gap:6px;padding:12px 16px"><div class="tiny">Người dùng yêu cầu tóm tắt V7 (version 1), rồi đổi tùy chọn và yêu cầu lại (version 2). Bản tóm tắt hiện tại của V7 phải là version 2.</div><div class="col" id="od-mode" style="gap:6px"></div></div>
+      <div class="card col" id="od-cap" style="flex:1;gap:8px"></div>
+    </div>
+    <div class="note rule" style="grid-column:1/-1"><span data-icon="list-ordered"></span><span><b>Quy tắc 8.</b> Khi cần giữ thứ tự theo video, cho các message cùng <code>video_id</code> dùng chung key, hoặc chỉ cập nhật bản hiện tại khi version mới hơn version trong DB.</span></div>
+  </div>
+</section>
+
+<!-- Bảng quy tắc -->
+<section class="slide" data-title="Bảng quy tắc và lỗi tương ứng" data-part="R" data-id="r-rules" style="--pc:#765343" data-reveal>
+  <div class="head"><span class="part">Quy tắc</span><h2>Bảng quy tắc và lỗi tương ứng</h2><span class="sub">Mỗi ca F trong bài thực hành kiểm một quy tắc</span></div>
+  <div class="body" style="grid-template-rows:auto auto;align-content:start;gap:12px">
+    <table class="t" style="font-size:0.7308rem">
+      <tr><th style="width:90px">Số</th><th>Quy tắc</th><th>Bỏ quy tắc thì</th><th style="width:190px">Ca kiểm thử</th></tr>
+      <tr data-step="1"><td>1 (A)</td><td>Trả <code>202</code> sau publisher confirm; queue durable, message persistent; không có confirm thì trả <code>503</code></td><td class="n">Broker khởi động lại làm mất message; client đã nhận <code>202</code>, job kẹt ở <code>QUEUED</code></td><td>F6</td></tr>
+      <tr data-step="2"><td>2 (B)</td><td>Tắt auto-ack; ack sau commit</td><td class="n">Worker sập giữa chừng thì mất việc, job kẹt ở <code>QUEUED</code></td><td>F1</td></tr>
+      <tr data-step="2"><td>3 (B)</td><td>Chỉ xử lý khi job còn <code>QUEUED</code>; UNIQUE(job_id) trên <code>summaries</code>; lần nhận lại ghi <code>DUPLICATE</code> rồi ack</td><td class="n">Message giao lại sau commit gọi LLM lần nữa và tạo bản tóm tắt thứ hai</td><td>F5, H1</td></tr>
+      <tr data-step="3"><td>4 (C)</td><td>Lỗi tạm thời: chờ 1, 3, 9 giây rồi thử lại, không nack để đưa message về queue ngay</td><td class="n">Nhà cung cấp LLM đang giới hạn tần suất nhận thêm lời gọi liên tục và tiếp tục trả 429</td><td>F2</td></tr>
+      <tr data-step="3"><td>5 (C)</td><td>Đếm số lần xử lý trong <code>processing_attempts</code>, tối đa 4</td><td class="n">Bộ đếm trong RAM về 0 khi worker sập; message làm worker sập bị giao lại không dừng</td><td>F4</td></tr>
+      <tr data-step="3"><td>6 (C)</td><td>Lỗi vĩnh viễn hoặc hết lượt: job <code>DEAD_LETTERED</code>, message vào DLQ kèm loại lỗi, số lần, <code>correlation_id</code></td><td class="n">Thử lại một lỗi không thể tự hết; client thấy <code>QUEUED</code> trong khi không còn ai xử lý</td><td>F3, F4</td></tr>
+      <tr data-step="3"><td>7 (C)</td><td>Replay giữ nguyên <code>message_id</code></td><td class="n">Lịch sử xử lý tách thành hai message, số lần đếm lại từ đầu</td><td>F4</td></tr>
+      <tr data-step="4"><td>8 (D)</td><td>Giữ thứ tự theo video: dùng key <code>video_id</code> hoặc kiểm tra version</td><td class="n">Yêu cầu cũ xong sau ghi đè bản tóm tắt mới</td><td>F7</td></tr>
+    </table>
+    <div class="note" data-step="5"><span data-icon="triangle-alert"></span><span>Tám quy tắc này không chặn được hai trường hợp: API ghi job rồi sập trước khi publish (khoảng hở 1, ghi lại ở F6), và worker sập sau khi gọi LLM, trước commit nên LLM bị gọi lại (khoảng hở 3, ghi lại ở F8).</span></div>
+  </div>
+</section>
+
+<!-- E1: giao bài -->
+<section class="slide" data-title="Bài thực hành: tóm tắt video qua queue" data-part="E" data-id="e-lab" style="--pc:#3f6f6a">
+  <div class="head"><span class="part">E. Thực hành</span><h2>Bài thực hành: tóm tắt video qua queue</h2></div>
+  <div class="body side">
+    <div class="card" style="padding:8px"><svg class="dia" viewBox="0 0 1000 655" id="lab-svg" role="img" aria-label="Kiến trúc bài thực hành"></svg></div>
+    <div class="col" style="gap:10px">
+      <div class="card col" style="gap:6px;flex:1">
+        <h4><span data-icon="terminal"></span>Nhóm tự xây với coding agent</h4>
+        <ul class="chk">
+          <li><span class="st">1</span><span>Repo trống: API, 2 worker, <code>mock-llm</code>, RabbitMQ, PostgreSQL</span></li>
+          <li><span class="st">2</span><span>Bảng <code>videos</code>, <code>jobs</code>, <code>summaries</code> UNIQUE(job_id), <code>processing_attempts</code>; video V9 không có âm thanh</span></li>
+          <li><span class="st">3</span><span><code>mock-llm</code>: độ trễ cấu hình, fault 429, 503, timeout, bộ đếm lời gọi</span></li>
+          <li><span class="st">4</span><span>Chờ broker xác nhận; ack sau commit; retry có chờ, DLQ, replay</span></li>
+          <li><span class="st">5</span><span>Test tự động H0, F2, F3, F4, F7; demo H1, F1, F5, F6, F8</span></li>
+        </ul>
+      </div>
+      <div class="note"><span data-icon="triangle-alert"></span><span>Không gọi LLM thật, không cần API key. Chỉ mở cổng loopback. Dùng broker khác RabbitMQ thì nộp bảng đối chiếu ack, giao lại, retry, DLQ.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- E2: contract -->
+<section class="slide" data-title="Contract của bài thực hành" data-part="E" style="--pc:#3f6f6a" data-reveal>
+  <div class="head"><span class="part">E. Thực hành</span><h2>Contract của bài thực hành</h2><span class="sub">Đổi tên route được, phải giữ đúng ý nghĩa</span></div>
+  <div class="body" style="grid-template-rows:auto auto;align-content:start;gap:12px">
+    <table class="t" style="font-size:0.7308rem">
+      <tr><th style="width:420px">API</th><th>Yêu cầu</th></tr>
+      <tr data-step="1"><td><code>POST /summaries</code></td><td>Nhận <code>video_id</code>, tùy chọn. Ghi job <code>QUEUED</code> kèm <code>version</code> tăng dần theo video, publish <code>SummarizeVideo</code>, chờ broker xác nhận rồi trả <code>202</code> kèm <code>job_id</code>, <code>message_id</code>, <code>status_url</code>. Broker không nhận hoặc quá thời gian chờ xác nhận thì trả <code>503</code>.</td></tr>
+      <tr data-step="2"><td><code>GET /summaries/:job_id</code></td><td>Trả <code>QUEUED</code>, <code>DONE</code> hoặc <code>DEAD_LETTERED</code>, kèm bản tóm tắt nếu đã có.</td></tr>
+      <tr data-step="3"><td><code>GET /summaries/:job_id/attempts</code></td><td>Liệt kê từng lần xử lý: <code>message_id</code>, lần thứ mấy, worker nào, có phải giao lại không, giờ bắt đầu và kết thúc, kết quả, loại lỗi.</td></tr>
+      <tr data-step="4"><td><code>GET /videos/:video_id/summary</code></td><td>Bản tóm tắt hiện tại của video: bản có version lớn nhất đã <code>DONE</code>.</td></tr>
+      <tr data-step="5"><td>Replay theo <code>message_id</code></td><td>Lấy message ra khỏi DLQ, giữ nguyên <code>message_id</code>, đưa lại vào queue chính, đổi job về <code>QUEUED</code> và ghi lại lần replay.</td></tr>
+      <tr data-step="6"><td><code>GET /health</code>; <code>mock-llm</code></td><td>Health của API, worker, mock-llm. Mock-llm cho đọc số lần được gọi theo <code>job_id</code>.</td></tr>
+      <tr data-step="7"><td>Message <code>SummarizeVideo</code></td><td>Gồm <code>message_id</code> do API sinh và không đổi, <code>job_id</code>, <code>video_id</code>, <code>version</code>, <code>correlation_id</code>, <code>created_at</code>, tùy chọn. Không chứa nội dung video.</td></tr>
+    </table>
+    <div class="note b" data-step="8"><span data-icon="lightbulb"></span><span>Mỗi lần xử lý có một kết quả: <code>SUCCEEDED</code>, <code>TRANSIENT_ERROR</code>, <code>PERMANENT_ERROR</code>, <code>DUPLICATE</code> hoặc <code>CRASHED</code>. Số lần xử lý đếm từ bảng <code>processing_attempts</code> theo <code>message_id</code>, không đếm trong RAM.</span></div>
+  </div>
+</section>
+
+<!-- E3: các phiên bản -->
+<section class="slide" data-title="Bốn phiên bản" data-part="E" style="--pc:#3f6f6a" data-reveal>
+  <div class="head"><span class="part">E. Thực hành</span><h2>Bốn phiên bản</h2></div>
+  <div class="body" style="grid-template-columns:repeat(4,1fr);grid-template-rows:1fr auto;gap:14px">
+    <div class="card col" data-step="1" style="gap:8px">
+      <div class="row"><h3 style="margin:0">V0</h3><span class="pill b">đo</span></div>
+      <div class="small" style="font-weight:700">Bản đồng bộ để so sánh</div>
+      <ul class="chk">
+        <li><span class="st">1</span><span><code>POST /summaries</code> gọi mock-llm và chờ xử lý xong mới trả về</span></li>
+        <li><span class="st">2</span><span>Đo thời gian phản hồi của 5 request liên tiếp, lưu làm B0</span></li>
+      </ul>
+    </div>
+    <div class="card col" data-step="2" style="gap:8px">
+      <div class="row"><h3 style="margin:0">V1</h3><span class="pill ok">H0, H1, F7</span></div>
+      <div class="small" style="font-weight:700">Queue và worker</div>
+      <ul class="chk">
+        <li><span class="st">1</span><span>Chờ broker xác nhận rồi trả <code>202</code>; broker lỗi thì trả <code>503</code></span></li>
+        <li><span class="st">2</span><span>Tắt auto-ack; commit bản tóm tắt và trạng thái job rồi mới ack</span></li>
+        <li><span class="st">3</span><span>Ghi mỗi lần xử lý vào DB; chạy 2 worker; chỉ cập nhật bản hiện tại khi version mới hơn</span></li>
+      </ul>
+    </div>
+    <div class="card col" data-step="3" style="gap:8px">
+      <div class="row"><h3 style="margin:0">V2</h3><span class="pill ok">F2, F3, F4</span></div>
+      <div class="small" style="font-weight:700">Retry, DLQ, replay</div>
+      <ul class="chk">
+        <li><span class="st">1</span><span>Phân loại theo loại lỗi, không theo nội dung thông báo</span></li>
+        <li><span class="st">2</span><span>Chờ 1, 3, 9 giây giữa các lần thử; tối đa 4 lần, đếm trong DB</span></li>
+        <li><span class="st">3</span><span>DLQ lưu đủ thông tin lỗi; replay giữ nguyên <code>message_id</code></span></li>
+      </ul>
+    </div>
+    <div class="card col" data-step="4" style="gap:8px">
+      <div class="row"><h3 style="margin:0">V3</h3><span class="pill g">F1, F5, F6, F8</span></div>
+      <div class="small" style="font-weight:700">Tắt process thật</div>
+      <ul class="chk">
+        <li><span class="st">1</span><span>Tắt worker tại <code>before_llm_call</code>, <code>after_llm_before_commit</code>, <code>after_commit_before_ack</code></span></li>
+        <li><span class="st">2</span><span>Khởi động lại broker khi còn message đang chờ</span></li>
+        <li><span class="st">3</span><span>Chỉ ra job <code>QUEUED</code> không có message; ghi bộ đếm mock-llm ở F8</span></li>
+      </ul>
+    </div>
+    <div class="note" data-step="5" style="grid-column:1/-1"><span data-icon="triangle-alert"></span><span>F1, F5, F8 phải tắt process thật đúng tại marker; ném exception không giống process bị tắt. Ở F6 và F8, ghi lại job bị kẹt và số lần gọi LLM, không che đi bằng cách thử lại trong RAM.</span></div>
+  </div>
+</section>
+
+<!-- E4: oracle -->
+<section class="slide" data-title="Kết quả mong đợi của từng tình huống" data-part="E" data-id="e-oracle" style="--pc:#3f6f6a">
+  <div class="head"><span class="part">E. Thực hành</span><h2>Kết quả mong đợi</h2><span class="sub">Mỗi ca chạy trên dữ liệu mới</span></div>
+  <div class="body" style="grid-template-columns:440px 1fr;gap:16px">
+    <div class="col" id="orc-list" style="gap:6px"></div>
+    <div class="card col" id="orc-panel" style="gap:10px;overflow:auto"></div>
+  </div>
+</section>
+
+<!-- Exit -->
+<section class="slide" data-title="Câu hỏi kết thúc" data-part="Q" data-id="q-exit" style="--pc:#765343">
+  <div class="head"><span class="part">Tổng kết</span><h2>Câu hỏi kết thúc</h2></div>
+  <div class="body" style="grid-template-columns:1fr 520px;gap:16px">
+    <div class="col" id="ex-q" style="gap:8px;overflow:auto"></div>
+    <div class="col" style="gap:10px">
+      <div class="card col" style="gap:6px">
+        <h4><span data-icon="git-fork"></span>Ba khoảng hở còn lại</h4>
+        <ul class="chk">
+          <li><span class="st">1</span><span>API ghi job rồi sập trước khi publish: job <code>QUEUED</code> mà không có message (F6)</span></li>
+          <li><span class="st">2</span><span>Worker ghi <code>DEAD_LETTERED</code> rồi sập trước khi đưa message vào DLQ</span></li>
+          <li><span class="st">3</span><span>Lời gọi ra ngoài DB (gọi LLM, gửi email) bị lặp khi worker sập sau lời gọi, trước commit (F8)</span></li>
+        </ul>
+      </div>
+      <div class="note b"><span data-icon="lightbulb"></span><span>Block 9 xử lý khoảng hở 1 bằng transactional outbox và tiếp tục với khoảng hở 3.</span></div>
+    </div>
+  </div>
+</section>
+
+<nav id="nav" aria-label="Điều hướng slide">
+  <button class="btn" id="prev" aria-label="Slide trước"><span data-icon="chevron-left"></span></button>
+  <button class="btn" id="next" aria-label="Slide sau"><span data-icon="chevron-right"></span></button>
+  <div id="parts" role="group" aria-label="Phần"></div>
+  <span id="title-mini"></span>
+  <span id="count"></span>
+  <button class="btn" id="overview" aria-label="Danh sách slide (O)"><span data-icon="layout-grid"></span></button>
+  <button class="btn" id="fullscreen" aria-label="Toàn màn hình (F)"><span data-icon="maximize"></span></button>
+</nav>
+</div>
+<dialog id="ov" aria-label="Danh sách slide">
+  <div class="row"><h3>Danh sách slide</h3><button class="btn sm" id="close-ov" style="margin-left:auto" aria-label="Đóng"><span data-icon="x"></span></button></div>
+  <div id="overview-grid"></div>
+</dialog>
+<script>
+// Biểu tượng Lucide (https://lucide.dev, giấy phép ISC), nhúng inline để chạy offline.
+const ICONS={
+  'archive':'<rect width="20" height="5" x="2" y="3" rx="1" /> <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /> <path d="M10 12h4" />',
+  'chevron-left':'<path d="m15 18-6-6 6-6"/>',
+  'chevron-right':'<path d="m9 18 6-6-6-6"/>',
+  'circle-check':'<circle cx="12" cy="12" r="10" /> <path d="m16 9-5.5 5.5L8 12" />',
+  'circle-x':'<circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" />',
+  'clipboard-check':'<rect width="8" height="4" x="8" y="2" rx="1" ry="1" /> <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /> <path d="m9 14 2 2 4-4" />',
+  'clock':'<circle cx="12" cy="12" r="10" /> <path d="M12 6v6l4 2" />',
+  'database':'<ellipse cx="12" cy="5" rx="9" ry="3"/> <path d="M3 5V19A9 3 0 0 0 21 19V5"/> <path d="M3 12A9 3 0 0 0 21 12"/>',
+  'flask-conical':'<path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" /> <path d="M6.453 15h11.094" /> <path d="M8.5 2h7" />',
+  'git-fork':'<circle cx="12" cy="18" r="3" /> <circle cx="6" cy="6" r="3" /> <circle cx="18" cy="6" r="3" /> <path d="M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9" /> <path d="M12 12v3" />',
+  'history':'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /> <path d="M12 7v5l4 2" />',
+  'hourglass':'<path d="M5 22h14" /> <path d="M5 2h14" /> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" /> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />',
+  'inbox':'<polyline points="22 12 16 12 14 15 10 15 8 12 2 12" /> <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />',
+  'layout-grid':'<rect width="7" height="7" x="3" y="3" rx="1"/> <rect width="7" height="7" x="14" y="3" rx="1"/> <rect width="7" height="7" x="14" y="14" rx="1"/> <rect width="7" height="7" x="3" y="14" rx="1"/>',
+  'lightbulb':'<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/> <path d="M9 18h6"/> <path d="M10 22h4"/>',
+  'list-ordered':'<path d="M11 5h10" /> <path d="M11 12h10" /> <path d="M11 19h10" /> <path d="M4 4h1v5" /> <path d="M4 9h2" /> <path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02" />',
+  'maximize':'<path d="M8 3H5a2 2 0 0 0-2 2v3"/> <path d="M21 8V5a2 2 0 0 0-2-2h-3"/> <path d="M3 16v3a2 2 0 0 0 2 2h3"/> <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
+  'monitor':'<rect width="20" height="14" x="2" y="3" rx="2"/> <line x1="8" x2="16" y1="21" y2="21"/> <line x1="12" x2="12" y1="17" y2="21"/>',
+  'power':'<path d="M12 2v10" /> <path d="M18.4 6.6a9 9 0 1 1-12.77.04" />',
+  'power-off':'<path d="M18.36 6.64A9 9 0 0 1 20.77 15" /> <path d="M6.16 6.16a9 9 0 1 0 12.68 12.68" /> <path d="M12 2v4" /> <path d="m2 2 20 20" />',
+  'repeat':'<path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" />',
+  'rotate-ccw':'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/> <path d="M3 3v5h5"/>',
+  'server':'<rect width="20" height="8" x="2" y="2" rx="2" ry="2"/> <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/> <line x1="6" x2="6.01" y1="6" y2="6"/> <line x1="6" x2="6.01" y1="18" y2="18"/>',
+  'skip-forward':'<path d="M21 4v16"/> <path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/>',
+  'terminal':'<path d="M12 19h8"/> <path d="m4 17 6-6-6-6"/>',
+  'sparkles':'<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /> <path d="M20 2v4" /> <path d="M22 4h-4" /> <circle cx="4" cy="20" r="2" />',
+  'triangle-alert':'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/> <path d="M12 9v4"/> <path d="M12 17h.01"/>',
+  'users':'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <path d="M16 3.128a4 4 0 0 1 0 7.744" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <circle cx="9" cy="7" r="4" />',
+  'video':'<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" /> <rect x="2" y="6" width="14" height="12" rx="2" />',
+  'x':'<path d="M18 6 6 18"/> <path d="m6 6 12 12"/>',
+  'zap':'<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" />'
+};
+const PARTS=[['0','Mở đầu','#765343'],['A','A. Queue và 202','#765343'],['B','B. Ack','#386283'],['C','C. Retry, DLQ','#a8741f'],['D','D. Nhiều worker','#5d6f3a'],['R','Quy tắc','#765343'],['E','E. Thực hành','#3f6f6a'],['Q','Tổng kết','#765343']];
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const NS='http://www.w3.org/2000/svg';
+const COL={p:'#765343',b:'#386283',g:'#4d7a4f',r:'#a14238',o:'#a8741f',mf:'#74685e',bd:'#ded4c7',mu:'#f2ede6',ac:'#eee2d2',rbg:'#f8e7e3',gbg:'#e6efe2',bbg:'#e3ecf3',obg:'#f6ead3',fg:'#302923',c:'#5d6f3a',cbg:'#e8ecdc',e:'#3f6f6a',ebg:'#e1eeec'};
+const F="'Be Vietnam Pro'",MO="'JetBrains Mono'";
+function icon(n){return `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`}
+function hydrateIcons(root=document){$$('[data-icon]',root).forEach(el=>{if(!el.firstChild){el.innerHTML=icon(el.dataset.icon)}})}
+function svgIc(n,x,y,s,color){return `<svg x="${x}" y="${y}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${color||'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function flash(el){if(!el)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+function toast(msg){let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','alert');document.body.append(t)}t.innerHTML=`${icon('triangle-alert')}<span>${msg}</span>`;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),6000)}
+function onErr(e){toast(`Lỗi: ${esc(String(e&&(e.message||e)||''))}`)}
+addEventListener('error',e=>onErr(e.error||e.message));
+addEventListener('unhandledrejection',e=>onErr(e.reason));
+function box(cx,cy,w,h,label,ic,o={}){
+  const x=cx-w/2,y=cy-h/2,hasSub=!!o.sub;
+  const ly=ic?(hasSub?y+h-36:y+h-20):(hasSub?cy-4:cy+8);
+  return `<g ${o.attr||''} class="${o.cls||''}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${o.rx??14}" style="fill:${o.fill||'#fff'};stroke:${o.stroke||COL.bd};stroke-width:${o.sw||2}${o.dash?';stroke-dasharray:6 5':''}"/>`+
+    (ic?svgIc(ic,cx-14,y+(hasSub?10:14),28,o.ic||COL.p):'')+
+    `<text x="${cx}" y="${ly}" text-anchor="middle" class="lbl" style="${o.lc?'fill:'+o.lc:''}">${label}</text>`+
+    (hasSub?`<text x="${cx}" y="${ly+23}" text-anchor="middle" class="sl">${o.sub}</text>`:'')+`</g>`;
+}
+function arrowDefs(id,colors){return `<defs>${Object.entries(colors).map(([k,c])=>`<marker id="${id}-${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="${c}"/></marker>`).join('')}</defs>`}
+const textW=s=>s.length*10.9;
+const T=(x,y,t,o='')=>`<text x="${x}" y="${y}" ${o}>${t}</text>`;
+const st=(w,size,fill,font=F)=>`style="font:${w} ${size} ${font};fill:${fill}"`;
+function modeBtns(host,list,cur,onPick){host.innerHTML=list.map(([k,l,ic])=>`<button class="btn sm ${k===cur?'on':''}" data-m="${k}">${ic?icon(ic):''}${l}</button>`).join('');$$('[data-m]',host).forEach(b=>b.onclick=()=>onPick(b.dataset.m))}
+
+/* Sơ đồ tuần tự chạy từng bước */
+let SEQ_ID=0;
+class Seq{
+  constructor(host,cfg){
+    this.id=++SEQ_ID;this.host=host;this.cfg=cfg;this.vars=cfg.variants;this.v=0;this.i=0;
+    host.classList.add('seq');host._seq=this;
+    host.innerHTML=`<div class="seq-stage"><svg class="seq-svg" preserveAspectRatio="xMidYMin meet" role="img" aria-label="Sơ đồ tuần tự"></svg></div><aside class="seq-side"><div class="seq-var" role="group" aria-label="Kịch bản">${this.vars.map((v,k)=>`<button class="btn sm" data-v="${k}">${v.icon?icon(v.icon):''}${esc(v.name)}</button>`).join('')}</div><div class="seq-cap" aria-live="polite"></div><div class="seq-ctl"><button class="btn" data-a="prev">${icon('chevron-left')}Lùi</button><button class="btn pri" data-a="next">Bước tiếp ${icon('skip-forward')}</button><button class="btn" data-a="reset" aria-label="Chạy lại từ đầu">${icon('rotate-ccw')}</button></div></aside>`;
+    this.svg=$('svg',host);this.cap=$('.seq-cap',host);
+    $('[data-a=prev]',host).onclick=()=>this.prev();
+    $('[data-a=next]',host).onclick=()=>this.next();
+    $('[data-a=reset]',host).onclick=()=>{this.i=0;this.update()};
+    $$('[data-v]',host).forEach(b=>b.onclick=()=>{this.v=+b.dataset.v;this.i=0;this.draw()});
+    this.draw();
+  }
+  get steps(){return this.vars[this.v].steps}
+  next(){if(this.i>=this.steps.length)return false;this.i++;this.update(true);return true}
+  prev(){if(this.i<=0)return false;this.i--;this.update();return true}
+  draw(){
+    const A=this.cfg.actors,W=1040,n=this.steps.length,top=6,hh=84;
+    const rowH=Math.min(62,Math.floor((700-top-hh-50)/n));
+    const y0=top+hh+40,H=y0+(n-1)*rowH+28,pad=104;
+    const xs=A.map((a,k)=>pad+k*(W-2*pad)/(A.length-1));
+    const mk={back:COL.p,front:COL.b,bad:COL.r,deny:COL.o,ok:COL.g};
+    let s=arrowDefs('sq'+this.id,mk);
+    A.forEach((a,k)=>{const x=xs[k];s+=`<line class="life" x1="${x}" y1="${top+hh}" x2="${x}" y2="${H}"/><g class="actor"><rect x="${x-99}" y="${top}" width="198" height="${hh}" rx="12"/>${svgIc(a.icon,x-15,top+9,30,COL.p)}<text x="${x}" y="${top+60}" text-anchor="middle">${esc(a.label)}</text><text x="${x}" y="${top+79}" text-anchor="middle" style="font-size:0.6154rem;font-weight:500;fill:${COL.mf}">${esc(a.sub)}</text></g>`});
+    this.steps.forEach((sp,k)=>{
+      const f=A.findIndex(a=>a.id===sp.f),t=A.findIndex(a=>a.id===(sp.t||sp.f)),y=y0+k*rowH,ch=sp.c||'back';
+      const lab=`<tspan class="num">${k+1}.</tspan> ${esc(sp.l)}`;
+      // Gắn sẵn trạng thái ẩn hoặc hiện ngay khi vẽ; nếu để update() thêm sau, transition opacity làm cả sơ đồ nháy lên rồi mờ đi.
+      let g=`<g class="st ch-${ch}${k>=this.i?' future':''}${k===this.i-1?' cur':''}" data-k="${k}">`;
+      if(f===t){const x=xs[f],w=Math.max(130,textW(sp.l)+52),left=Math.min(Math.max(x-w/2,4),W-w-4);g+=`<rect class="self" data-cx="${x}" x="${left}" y="${y-22}" width="${w}" height="34" rx="9"/><text x="${left+w/2}" y="${y+2}" text-anchor="middle">${lab}</text>`}
+      else{const x1=xs[f],x2=xs[t],d=x2>x1?1:-1,hw=(textW(sp.l)+30)/2,tx=Math.min(Math.max((x1+x2)/2,hw+4),W-hw-4);g+=`<line x1="${x1+d*4}" y1="${y}" x2="${x2-d*6}" y2="${y}" marker-end="url(#sq${this.id}-${ch})"/><text class="halo" style="stroke:#fff" x="${tx}" y="${y-9}" text-anchor="middle">${lab}</text>`}
+      s+=g+'</g>';
+    });
+    this.svg.setAttribute('viewBox',`0 0 ${W} ${H}`);this.svg.innerHTML=s;
+    // Ước lượng textW chưa tính số thứ tự và độ rộng thật của font; đo lại để khung ôm vừa chữ.
+    const fitSelf=()=>$$('rect.self',this.svg).forEach(r=>{const t=r.nextElementSibling,w=Math.max(130,t.getComputedTextLength()+40),left=Math.min(Math.max(+r.dataset.cx-w/2,4),W-w-4);r.setAttribute('x',left);r.setAttribute('width',w);t.setAttribute('x',left+w/2)});
+    fitSelf();document.fonts.ready.then(fitSelf);
+    $$('[data-v]',this.host).forEach(b=>b.classList.toggle('on',+b.dataset.v===this.v));
+    this.update();
+  }
+  update(anim){
+    const n=this.steps.length,v=this.vars[this.v];
+    $$('.st',this.svg).forEach(g=>{const k=+g.dataset.k;g.classList.toggle('future',k>=this.i);g.classList.toggle('cur',k===this.i-1)});
+    const sp=this.steps[this.i-1];
+    this.cap.innerHTML=this.i===0?`<div class="n">${esc(v.name)}</div><h4>${v.title}</h4>${v.intro}`:`<div class="n">Bước ${this.i}/${n}</div><h4>${esc(sp.l)}</h4>${sp.d||''}`;
+    hydrateIcons(this.cap);
+    $('[data-a=prev]',this.host).disabled=this.i===0;
+    $('[data-a=next]',this.host).disabled=this.i===n;
+    if(anim&&sp&&sp.t&&sp.t!==sp.f)this.pulse(this.i-1);
+  }
+  pulse(k){
+    const line=$(`.st[data-k="${k}"] line`,this.svg);if(!line)return;
+    const x1=+line.getAttribute('x1'),x2=+line.getAttribute('x2'),y=+line.getAttribute('y1');
+    const c=document.createElementNS(NS,'circle');c.setAttribute('r',7);c.setAttribute('cy',y);c.setAttribute('cx',x1);c.style.fill=getComputedStyle(line).stroke;this.svg.append(c);
+    const t0=performance.now();const tick=t=>{const p=Math.min(1,(t-t0)/550);c.setAttribute('cx',x1+(x2-x1)*p);if(p<1)requestAnimationFrame(tick);else c.remove()};requestAnimationFrame(tick);
+  }
+}
+
+/* Điều hướng slide */
+const slides=$$('.slide'),deck=$('#deck'),dialog=$('#ov'),grid=$('#overview-grid');let current=0;
+function go(n){
+  current=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,i)=>{s.classList.toggle('active',i===current);s.setAttribute('aria-hidden',i!==current);s.inert=i!==current});
+  const s=slides[current],pc=s.style.getPropertyValue('--pc')||COL.p;
+  deck.style.setProperty('--pc',pc);
+  $('#count').textContent=`${current+1} / ${slides.length}`;
+  $('#title-mini').textContent=s.dataset.title;
+  $('#progress').style.width=`${(current+1)/slides.length*100}%`;
+  $('#prev').disabled=current===0;$('#next').disabled=current===slides.length-1;
+  $$('#parts button').forEach(b=>b.classList.toggle('on',b.dataset.part===s.dataset.part));
+  [...grid.children].forEach((b,i)=>b.setAttribute('aria-current',i===current));
+  history.replaceState(null,'',`#${current+1}`);
+}
+function goId(id){const i=slides.findIndex(s=>s.dataset.id===id);if(i>=0)go(i)}
+// Hiện dần theo nhóm [data-step]: phím phải, nút trên đầu slide hoặc bấm vào phần đang mờ.
+function revealer(s){
+  if(s._rv)return s._rv;
+  const stepped=$$('[data-step]',s);
+  const groups=[...new Set(stepped.map(e=>+e.dataset.step))].sort((a,b)=>a-b).map(k=>stepped.filter(e=>+e.dataset.step===k));
+  groups.flat().forEach(r=>r.classList.add('rv','hide'));
+  const btn=document.createElement('button');btn.className='btn pri';btn.style.marginLeft='auto';$('.head',s).append(btn);
+  let n=0;const upd=()=>{groups.forEach((g,i)=>g.forEach(r=>r.classList.toggle('hide',i>=n)));btn.innerHTML=n<groups.length?`Tiếp ${icon('skip-forward')}`:`Ẩn lại ${icon('rotate-ccw')}`;if(n)groups[n-1].forEach(flash)};
+  s._rv={next(){if(n>=groups.length)return false;n++;upd();return true},prev(){if(!n)return false;n--;upd();return true}};
+  btn.onclick=()=>{if(!s._rv.next()){n=0;upd()}};
+  groups.forEach((g,i)=>g.forEach(r=>r.addEventListener('click',()=>{if(r.classList.contains('hide')){n=i+1;upd()}})));
+  upd();return s._rv;
+}
+$$('[data-reveal]').forEach(revealer);
+function step(d){const s=slides[current],sq=$('.seq',s),stp=sq&&sq._seq||s._rv;if(stp&&(d>0?stp.next():stp.prev()))return;go(current+d)}
+slides.forEach((s,i)=>{s.setAttribute('aria-label',`${i+1} / ${slides.length}: ${s.dataset.title}`);const b=document.createElement('button');b.innerHTML=`<small>${String(i+1).padStart(2,'0')}</small>${esc(s.dataset.title)}`;b.onclick=()=>{dialog.close();go(i)};grid.append(b)});
+PARTS.forEach(([p,l,c])=>{const b=document.createElement('button');b.textContent=l;b.dataset.part=p;b.style.setProperty('--pc',c);b.onclick=()=>go(slides.findIndex(s=>s.dataset.part===p));$('#parts').append(b)});
+$$('[data-go]').forEach(g=>g.addEventListener('click',()=>goId(g.dataset.go)));
+const overview=()=>{dialog.showModal();grid.children[current].focus()};
+$('#overview').onclick=overview;$('#close-ov').onclick=()=>dialog.close();
+$('#prev').onclick=()=>go(current-1);$('#next').onclick=()=>go(current+1);
+function fullscreen(){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else document.documentElement.requestFullscreen?.().catch(()=>{})}
+$('#fullscreen').onclick=fullscreen;
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey||dialog.open)return;
+  if(e.target.closest('input,textarea,select'))return;
+  if(e.target.closest('button,a,label')&&[' ','Enter'].includes(e.key))return;
+  const k=e.key;
+  if(['ArrowRight','ArrowDown','PageDown',' '].includes(k)){e.preventDefault();step(e.shiftKey&&k===' '?-1:1)}
+  else if(['ArrowLeft','ArrowUp','PageUp'].includes(k)){e.preventDefault();step(-1)}
+  else if(k==='Home'){e.preventDefault();go(0)}else if(k==='End'){e.preventDefault();go(slides.length-1)}
+  else if(k.toLowerCase()==='o')overview();else if(k.toLowerCase()==='f')fullscreen();
+});
+function fit(){deck.style.setProperty('--scale',Math.min(innerWidth/1600,innerHeight/900))}
+addEventListener('resize',fit);fit();
+
+/* ===== Mô hình dữ liệu dùng chung: broker, DB và mock-llm, dựng snapshot cho phần E ===== */
+// J42, M42, V7, thời gian xử lý và policy retry 1, 3, 9 giây là dữ liệu giả định của bài.
+const W0=()=>({up:{api:1,br:1,w:1},jobs:{},sums:[],att:[],q:[],retry:[],dlq:[],http:null,llm:0,cur:null});
+const Wk={
+  job:(s,id,stt)=>{s.jobs[id]=stt},
+  pub:(s,m)=>{s.q.push({m,st:'ready',re:false})},
+  give:(s,m,w='W1')=>{const x=s.q.find(x=>x.m===m);if(x){x.st='unacked';x.w=w}},
+  ack:(s,m)=>{s.q=s.q.filter(x=>x.m!==m)},
+  // Lần giao lại thấy attempt trước chưa kết thúc thì ghi CRASHED cho attempt đó.
+  att:(s,m,out,o={})=>{if(o.re)s.att.forEach(a=>{if(a.m===m&&a.out==='RUNNING')a.out='CRASHED'});const n=s.att.filter(a=>a.m===m).length+1;s.att.push({m,n,w:o.w||'W1',re:!!o.re,out,t:o.t??''})},
+  out:(s,out)=>{s.att[s.att.length-1].out=out},
+  llm:s=>{s.llm++},
+  crash:s=>{s.up.w=0;s.q.forEach(x=>{if(x.st==='unacked'){x.st='ready';x.re=true;delete x.w}})},
+  // Lưu bản tóm tắt, chuyển job sang DONE; chỉ đổi bản hiện tại của video khi version mới hơn.
+  commit:(s,id,v)=>{s.jobs[id]='DONE';s.sums.push(id);if(v&&(!s.cur||s.cur.v<v))s.cur={v,job:id}},
+  toRetry:(s,m,wait)=>{s.q=s.q.filter(x=>x.m!==m);s.retry.push({m,wait})},
+  back:(s,m)=>{s.retry=s.retry.filter(x=>x.m!==m);s.q.push({m,st:'ready',re:false})},
+  toDlq:(s,m,err,n)=>{s.q=s.q.filter(x=>x.m!==m);s.dlq.push({m,err,n})}
+};
+const OST={QUEUED:COL.b,DONE:COL.g,DEAD_LETTERED:COL.r};
+const OUTC={SUCCEEDED:COL.g,TRANSIENT_ERROR:COL.o,PERMANENT_ERROR:COL.r,DUPLICATE:COL.b,CRASHED:COL.r,RUNNING:COL.mf};
+const outTxt=o=>o==='RUNNING'?'chưa kết thúc':o;
+function miniWorld(s){
+  const js=Object.entries(s.jobs);
+  const o=js.length?js.map(([id,stt])=>`<div class="r"><span>${id}</span><b style="color:${OST[stt]}">${stt}</b></div>`).join(''):'<div class="r"><span>chưa có job</span></div>';
+  const cnt={};s.sums.forEach(i=>cnt[i]=(cnt[i]||0)+1);
+  const sm=Object.keys(cnt).length?Object.entries(cnt).map(([id,n])=>`<div class="r"><span>summary ${id}</span><b style="color:${n>1?COL.r:COL.g}">${n} bản</b></div>`).join(''):'<div class="r"><span>chưa có bản tóm tắt</span></div>';
+  const cur=s.cur?`<div class="r"><span>V7 bản hiện tại</span><b>version ${s.cur.v}</b></div>`:'';
+  const ln=(name,arr,f)=>`<div class="r"><span>${name}</span><b>${arr.length?arr.map(f).join(', '):'trống'}</b></div>`;
+  const br=(s.http?`<div class="r"><span>API trả</span><b style="color:${s.http[0]==='202'?COL.g:COL.r}">${s.http[0]||'không có'}</b></div>`:'')+ln('summaries',s.q,x=>`${x.m} ${x.st}`)+ln('retry',s.retry,x=>x.m)+ln('dlq',s.dlq,x=>`${x.m} ${x.err}`)+`<div class="r"><span>mock-llm được gọi</span><b>${s.llm} lần</b></div>`;
+  const at=s.att.length?s.att.map(a=>`<div class="r"><span>${a.m} lần ${a.n} ${a.w}${a.re?' giao lại':''}${a.t!==''?' t='+a.t:''}</span><b style="color:${OUTC[a.out]}">${outTxt(a.out)}</b></div>`).join(''):'<div class="r"><span>chưa có lần xử lý nào</span></div>';
+  return `<div class="mini"><div class="db"><h4>${icon('database')}jobs, summaries</h4>${o}${sm}${cur}</div><div class="db"><h4>${icon('inbox')}Broker, mock-llm</h4>${br}</div><div class="db"><h4>${icon('history')}processing_attempts</h4>${at}</div></div>`;
+}
+
+/* ===== Trạng thái của một kịch bản sau i bước; slide kết quả mong đợi dùng để dựng snapshot ===== */
+function stateAt(steps,i){const s=W0();steps.slice(0,i).forEach(f=>f(s));return s}
+const finalOf=steps=>stateAt(steps,steps.length);
+
+/* ===== Bìa ===== */
+(()=>{
+  const P=[['a-ctx','A','Queue và mã 202','Timeout của client, RPC qua broker, publisher confirm',COL.p,'202 Accepted'],['b-why','B','Ack và giao lại message','Ack sau commit, cờ redelivered, attempt DUPLICATE',COL.b,'ack M42'],['c-flow','C','Retry, DLQ và replay','Lỗi tạm thời, lỗi vĩnh viễn, chờ 1, 3, 9 giây, tối đa 4 lần',COL.o,'summaries.dlq'],['d-workers','D','Nhiều worker và thứ tự xử lý','Competing consumers, prefetch, key video_id',COL.c,'key = video_id'],['e-lab','E','Bài thực hành tóm tắt video','Phiên bản V0 đến V3, bằng chứng từ DB, broker, mock-llm',COL.e,'F1 ... F8']];
+  let s='';
+  P.forEach(([g,k,t,sub,c,tag],i)=>{const y=6+i*110;s+=`<g class="hit" data-go="${g}"><rect x="10" y="${y}" width="740" height="98" rx="18" fill="#fff" stroke="${c}" stroke-width="2"/>${T(34,y+32,'PHẦN '+k,st(700,'0.6538rem',c))}${T(34,y+64,t,st(700,'1.0385rem',COL.fg,'Lora'))}${T(34,y+88,sub,'class="sl" style="font-size:0.6538rem"')}<rect x="548" y="${y+28}" width="174" height="42" rx="10" fill="${COL.mu}" stroke="${COL.bd}"/>${T(635,y+55,tag,`text-anchor="middle" ${st(600,'0.6538rem',c,MO)}`)}</g>`});
+  $('#cv-svg').innerHTML=s;
+  $$('#cv-svg [data-go]').forEach(g=>g.addEventListener('click',()=>goId(g.dataset.go)));
+})();
+
+/* ===== A1: client timeout ===== */
+// Thời gian xử lý 120 giây, thời điểm trả 202 (1 giây) và chu kỳ client hỏi trạng thái (30 giây) là giả định.
+(()=>{
+  const svg=$('#rq-svg');let mode='sync';const P=120,TM=180,X=t=>190+t*(780/TM);
+  function draw(){
+    const to=+$('#rq-t').value;$('#rq-v').textContent=to;
+    modeBtns($('#rq-mode'),[['sync','Xử lý đồng bộ','hourglass'],['async','Qua queue','inbox']],mode,m=>{mode=m;draw()});
+    let s=arrowDefs('rq',{m:COL.mf});
+    const rows=mode==='sync'?[['Client',110],['API',220],['DB',330]]:[['Client',90],['API',190],['Worker',290],['DB',390]];
+    rows.forEach(([l,y])=>{s+=T(20,y+6,l,st(700,'0.6923rem',COL.fg))+`<line x1="${X(0)}" y1="${y}" x2="${X(TM)}" y2="${y}" style="stroke:${COL.bd};stroke-width:2;stroke-dasharray:4 5"/>`});
+    for(let t=0;t<=TM;t+=30)s+=`<line x1="${X(t)}" y1="470" x2="${X(t)}" y2="480" style="stroke:${COL.mf};stroke-width:2"/>`+T(X(t),504,t,`text-anchor="middle" ${st(600,'0.6154rem',COL.mf,MO)}`);
+    s+=`<line x1="${X(0)}" y1="470" x2="${X(TM)}" y2="470" style="stroke:${COL.mf};stroke-width:2"/>`+T(X(TM),536,'giây',`text-anchor="end" ${st(600,'0.6154rem',COL.mf)}`);
+    const bar=(t1,t2,y,c,bg,l)=>`<rect x="${X(t1)}" y="${y-16}" width="${Math.max(8,X(t2)-X(t1))}" height="32" rx="8" style="fill:${bg};stroke:${c};stroke-width:2"/>${l?T(X(t1)+10,y+6,l,st(700,'0.5769rem',c)):''}`;
+    const dot=(t,y,c,l,above)=>`<circle cx="${X(t)}" cy="${y}" r="9" style="fill:${c}"/>${T(X(t),above?y-20:y+36,l,`text-anchor="middle" class="halo" ${st(700,'0.5769rem',c)}`)}`;
+    let res;
+    if(mode==='sync'){
+      const end=Math.min(to,P);
+      s+=bar(0,end,110,COL.b,COL.bbg,'client chờ');
+      s+=bar(0,P,220,COL.p,COL.ac,'tách âm thanh, gọi LLM');
+      s+=dot(P,330,COL.g,'COMMIT J42',false);
+      if(to<P){s+=dot(to,110,COL.r,'hết giờ chờ',true)+`<line x1="${X(to)}" y1="126" x2="${X(to)}" y2="204" style="stroke:${COL.r};stroke-width:2;stroke-dasharray:5 4"/>`;
+        s+=dot(P,220,COL.mf,'không ai nhận kết quả',true);
+        res=`<h4 style="margin:0">${icon('triangle-alert')} Client báo lỗi, nhưng J42 vẫn được xử lý xong</h4><div class="small">Client chỉ chờ ${to} giây, còn API đến giây thứ 120 mới có bản tóm tắt. Client không biết yêu cầu đã được xử lý hay chưa. Nếu người dùng bấm gửi lại, hệ thống gọi LLM thêm một lần cho cùng video và trả tiền token hai lần.</div><div class="note r">${icon('triangle-alert')}<span>Tăng thời gian chờ chỉ dời ngưỡng lỗi. Video dài hơn thì thời gian xử lý lại vượt thời gian chờ.</span></div>`}
+      else{s+=dot(P,110,COL.g,'200 OK',true);res=`<h4 style="margin:0">${icon('circle-check')} Client nhận 200 sau 120 giây</h4><div class="small">Client và mọi proxy ở giữa phải giữ kết nối HTTP suốt 2 phút. Nếu server sập giữa chừng, client chỉ nhận lỗi kết nối, trong khi LLM có thể đã được gọi và tính tiền.</div>`}
+    }else{
+      s+=bar(0,1,190,COL.p,COL.ac,'');s+=dot(0.5,390,COL.b,'QUEUED',false);
+      s+=dot(1,90,COL.g,'202',true);
+      s+=bar(1,121,290,COL.o,COL.obg,'worker xử lý J42');s+=dot(121,390,COL.g,'DONE',false);
+      [30,60,90,120,150].forEach(t=>{const done=t>=121;s+=dot(t,90,done?COL.g:COL.b,done?'DONE':'QUEUED',true)});
+      res=`<h4 style="margin:0">${icon('circle-check')} Client nhận 202 sau khoảng 1 giây (giả định)</h4><div class="small">API chỉ ghi job, publish message rồi trả <code>202</code> kèm <code>status_url</code>. Sau đó client gọi <code>GET /summaries/J42</code> mỗi 30 giây; kết quả là <code>QUEUED</code> cho đến khi worker commit xong.</div><div class="note b">${icon('lightbulb')}<span>Thời gian chờ của client không còn phụ thuộc vào độ dài video. Đổi lại, client phải hiểu thêm trạng thái <code>QUEUED</code> và tự hỏi lại kết quả.</span></div>`;
+    }
+    svg.innerHTML=s;$('#rq-res').innerHTML=res;flash($('#rq-res'));
+  }
+  $('#rq-t').oninput=draw;draw();
+})();
+
+/* ===== A4: vòng đời message ===== */
+(()=>{
+  const svg=$('#lc-svg');let mode='all';
+  // Nút: [cx, cy, w, h, nhãn, icon, dòng phụ]. Cạnh: [đường đi, nhãn, x, y, căn lề nhãn]. Nút và cạnh cùng tên (retry, dlq) được tô cùng lúc.
+  const N={api:[100,150,170,100,'API','server','POST /summaries'],ready:[330,150,180,100,'ready','inbox','chờ giao'],unacked:[600,150,180,100,'unacked','terminal','đang ở worker'],done:[885,150,170,100,'đã xóa','circle-check','xử lý xong'],retry:[420,370,200,100,'summaries.retry','clock','chờ thử lại'],dlq:[650,370,200,100,'summaries.dlq','archive','chờ người xử lý']};
+  const E={pub:['M187 150 L236 150','publish, confirm',210,84,'middle'],give:['M422 150 L506 150','giao',464,134,'middle'],ack:['M692 150 L796 150','ack',744,134,'middle'],crash:['M570 98 C 550 28, 400 28, 380 98','worker sập: giao lại',475,40,'middle'],retry:['M570 202 L470 316','lỗi tạm thời',512,268,'end'],ttl:['M380 318 L350 204','hết giờ chờ',352,268,'end'],dlq:['M630 202 L645 316','lỗi vĩnh viễn, hết lượt',652,268,'start'],replay:['M650 422 L650 500 L280 500 L280 204','replay, giữ message_id',465,528,'middle']};
+  const M={
+    all:{b:'Toàn bộ',t:'Một message đi qua ba chặng',d:'<p><b>Vào broker.</b> API publish, broker lưu message rồi gửi confirm. Message ở trạng thái <code>ready</code>.</p><p><b>Ở worker.</b> Broker giao message cho một worker và chuyển sang <code>unacked</code>. Broker vẫn giữ bản này cho đến khi nhận ack.</p><p><b>Rời broker.</b> Ack thì broker xóa message. Lỗi thì message vào retry hoặc DLQ. Worker sập thì message quay về <code>ready</code>.</p>'},
+    A:{b:'A. Vào broker',on:['api','ready','pub'],go:'a-durable',t:'Phần A: message đã vào broker an toàn chưa',d:'<p>API chỉ trả <code>202</code> khi broker đã lưu message. Nếu message mất ở đoạn này, job kẹt ở <code>QUEUED</code> và không worker nào biết có việc.</p>'},
+    B:{b:'B. Ack',on:['ready','unacked','done','give','ack','crash'],go:'b-why',t:'Phần B: khi nào broker được xóa message',d:'<p>Message ở trạng thái <code>unacked</code> từ lúc giao đến lúc broker nhận ack. Worker sập trong khoảng này thì broker đưa message về <code>ready</code> để giao lại. Vị trí của ack so với commit quyết định việc bị mất hay bị làm lặp.</p>'},
+    C:{b:'C. Lỗi',on:['ready','unacked','retry','dlq','ttl','replay'],go:'c-flow',t:'Phần C: message lỗi đi đâu',d:'<p>Lỗi tạm thời: message vào <code>summaries.retry</code>, hết thời gian chờ thì quay về <code>ready</code>. Lỗi vĩnh viễn hoặc hết lượt: message vào <code>summaries.dlq</code>. Sửa xong nguyên nhân thì replay message về <code>ready</code>.</p>'},
+    D:{b:'D. Nhiều worker',on:['ready','unacked','give'],go:'d-workers',t:'Phần D: nhiều worker cùng lấy message',d:'<p>Mỗi message <code>ready</code> chỉ được giao cho một worker. Prefetch giới hạn số message <code>unacked</code> trên mỗi worker. Các worker chạy song song nên thứ tự hoàn tất có thể khác thứ tự giao.</p>'}
+  };
+  function draw(){
+    modeBtns($('#lc-mode'),Object.entries(M).map(([k,v])=>[k,v.b]),mode,m=>{mode=m;draw()});
+    const f=M[mode],on=k=>!f.on||f.on.includes(k),hi=k=>!!f.on&&f.on.includes(k);
+    let s=arrowDefs('lc',{m:COL.mf,p:COL.p});
+    s+=`<rect x="222" y="14" width="538" height="440" rx="18" style="fill:${COL.mu};stroke:${COL.bd};stroke-width:2;stroke-dasharray:9 6"/>${svgIc('inbox',238,24,24,COL.mf)}${T(270,43,'Broker',st(700,'0.6538rem',COL.mf))}`;
+    Object.entries(E).forEach(([k,[d,l,x,y,a]])=>{const c=hi(k)?COL.p:COL.mf;s+=`<g opacity="${on(k)?1:.15}"><path d="${d}" class="edge" style="stroke:${c};stroke-width:${hi(k)?4:3}" marker-end="url(#lc-${hi(k)?'p':'m'})"/>${T(x,y,l,`text-anchor="${a}" class="halo" ${st(700,'0.6154rem',c)}`)}</g>`});
+    Object.entries(N).forEach(([k,[cx,cy,w,h,l,ic,sub]])=>{s+=box(cx,cy,w,h,l,ic,{sub:mode==='D'&&k==='unacked'?'ở W1 và W2':sub,attr:`opacity="${on(k)?1:.2}"`,stroke:hi(k)?COL.p:COL.bd,sw:hi(k)?3.5:2})});
+    svg.innerHTML=s;
+    $('#lc-cap').innerHTML=`<h4 style="margin:0">${f.t}</h4><div class="small col" style="gap:8px">${f.d}</div>${f.go?`<button class="btn sm pri" style="align-self:flex-start;margin-top:auto" data-lc-go="${f.go}">Đến phần ${mode}${icon('chevron-right')}</button>`:''}`;
+    const g=$('[data-lc-go]');if(g)g.onclick=()=>goId(g.dataset.lcGo);
+    flash($('#lc-cap'));
+  }
+  draw();
+})();
+
+/* ===== A2: RPC qua broker và chuyển giao công việc ===== */
+new Seq($('#seq-rpc'),{
+  actors:[{id:'cl',label:'Client',sub:'trình duyệt, app',icon:'monitor'},{id:'api',label:'API',sub:'Summary service',icon:'server'},{id:'br',label:'Broker',sub:'RabbitMQ',icon:'inbox'},{id:'wk',label:'Worker',sub:'tóm tắt video',icon:'terminal'}],
+  variants:[
+    {name:'RPC qua broker (đã học)',icon:'repeat',title:'Request queue và reply queue',intro:'<p>Cách đã làm ở môn Software Architecture: API gửi request vào một queue, worker xử lý xong thì gửi kết quả vào reply queue. Hai bên khớp request với kết quả bằng <code>correlation_id</code>.</p>',steps:[
+      {f:'cl',t:'api',l:'POST /summaries',d:'<p>Client mở kết nối HTTP và chờ kết quả.</p>'},
+      {f:'api',t:'br',l:'publish request, reply_to, correlation_id',d:'<p>API ghi tên queue nhận kết quả vào <code>reply_to</code> và gắn một <code>correlation_id</code> để nhận đúng kết quả của mình.</p>'},
+      {f:'br',t:'wk',l:'giao request',d:''},
+      {f:'wk',l:'xử lý 2 phút',d:'<p>Trong 2 phút này, client vẫn giữ kết nối với API, API vẫn chờ kết quả.</p>'},
+      {f:'wk',t:'br',l:'publish reply, cùng correlation_id',d:''},
+      {f:'br',t:'api',l:'giao reply',d:''},
+      {f:'api',t:'cl',l:'200 OK sau 2 phút',c:'ok',d:'<p>Client vẫn phải chờ đúng bằng thời gian xử lý. Có broker ở giữa, nhưng client, API và worker vẫn phải cùng chạy suốt quá trình đó.</p>'}]},
+    {name:'Giao việc cho worker',icon:'inbox',title:'API nhận yêu cầu, worker xử lý sau',intro:'<p>API chỉ cần chắc chắn yêu cầu đã được ghi lại an toàn, sau đó trả <code>202</code> ngay. Client theo dõi kết quả qua một API đọc trạng thái riêng.</p>',steps:[
+      {f:'cl',t:'api',l:'POST /summaries',d:''},
+      {f:'api',l:'commit J42 QUEUED',d:'<p>API chỉ ghi yêu cầu tóm tắt: video nào, tùy chọn gì, trạng thái <code>QUEUED</code>. Tách âm thanh, chuyển giọng nói và gọi LLM chưa chạy; đó là việc của worker.</p>'},
+      {f:'api',t:'br',l:'publish M42 (persistent)',d:'<p>Message M42 mang <code>job_id</code> J42.</p>'},
+      {f:'br',t:'api',l:'publisher confirm',c:'front',d:'<p>Broker báo đã lưu M42. Trước thời điểm này, API chưa có căn cứ để trả <code>202</code>.</p>'},
+      {f:'api',t:'cl',l:'202 Accepted, status_url',c:'ok',d:'<p>Client có <code>job_id</code> và đường dẫn để hỏi trạng thái. Kết nối HTTP kết thúc tại đây.</p>'},
+      {f:'br',t:'wk',l:'giao M42',d:'<p>Nếu worker đang tắt, M42 nằm chờ trong queue đến khi có worker.</p>'},
+      {f:'wk',l:'gọi LLM, commit bản tóm tắt',d:''},
+      {f:'wk',t:'br',l:'ack M42',c:'front',d:'<p>Worker ack sau khi commit. Phần B xem chuyện gì xảy ra khi đổi thứ tự hai bước này.</p>'},
+      {f:'cl',t:'api',l:'GET /summaries/J42',d:''},
+      {f:'api',t:'cl',l:'DONE, bản tóm tắt',c:'ok',d:''}]},
+    {name:'RPC, API sập giữa chừng',icon:'power-off',title:'Kết quả về khi không còn ai chờ',intro:'<p>Vẫn là luồng RPC, nhưng API khởi động lại trong lúc worker đang xử lý.</p>',steps:[
+      {f:'cl',t:'api',l:'POST /summaries',d:''},
+      {f:'api',t:'br',l:'publish request, reply_to',d:''},
+      {f:'br',t:'wk',l:'giao request',d:''},
+      {f:'api',l:'API khởi động lại',c:'bad',d:'<p>Danh sách <code>correlation_id</code> đang chờ nằm trong RAM của API nên mất theo process.</p>'},
+      {f:'api',t:'cl',l:'lỗi kết nối',c:'bad',d:'<p>Client không biết yêu cầu đã được xử lý hay chưa.</p>'},
+      {f:'wk',l:'xử lý xong, commit',d:'<p>Worker vẫn gọi LLM và lưu bản tóm tắt như bình thường.</p>'},
+      {f:'wk',t:'br',l:'publish reply',d:''},
+      {f:'br',l:'reply không còn ai nhận',c:'deny',d:'<p>Kết quả đã nằm trong DB, nhưng client chỉ biết được nếu có API để hỏi trạng thái. Vì vậy hợp đồng <code>202</code> phải kèm <code>status_url</code>.</p>'}]}
+  ]
+});
+
+/* ===== A5: khi nào được trả 202 ===== */
+new Seq($('#seq-durable'),{
+  actors:[{id:'cl',label:'Client',sub:'trình duyệt, app',icon:'monitor'},{id:'api',label:'API',sub:'Summary service',icon:'server'},{id:'db',label:'DB',sub:'PostgreSQL',icon:'database'},{id:'br',label:'Broker',sub:'RabbitMQ',icon:'inbox'}],
+  variants:[
+    {name:'Làm đúng',icon:'circle-check',title:'Message đã an toàn rồi mới trả 202',intro:'<p>Khi nhận <code>202</code>, client hiểu là yêu cầu đã được nhận và sẽ được xử lý. Vì vậy API chỉ được trả <code>202</code> khi message đã nằm an toàn trong broker.</p><p>Cần đủ ba điều kiện: queue durable, message persistent, và API chờ broker xác nhận (publisher confirm).</p>',steps:[
+      {f:'cl',t:'api',l:'POST /summaries',d:''},
+      {f:'api',t:'db',l:'lưu J42 QUEUED',d:'<p>API chỉ ghi yêu cầu tóm tắt: video nào, tùy chọn gì, trạng thái <code>QUEUED</code>. Phần xử lý chưa chạy: tách âm thanh, chuyển giọng nói, gọi LLM, lưu bản tóm tắt, chuyển job sang <code>DONE</code>. Worker làm phần này sau khi nhận M42, mất khoảng 2 phút (giả định).</p><p>Job được ghi trước để client có <code>job_id</code> và hỏi được <code>GET /summaries/J42</code> ngay sau khi nhận <code>202</code>, kể cả khi worker chưa nhận việc.</p>'},
+      {f:'api',t:'br',l:'publish M42 (persistent)',d:'<p>M42 được đánh dấu persistent và gửi vào queue durable.</p>'},
+      {f:'br',l:'ghi M42 xuống đĩa',d:'<p>Broker lưu M42 xuống đĩa. Nếu broker khởi động lại, queue và M42 vẫn còn.</p>'},
+      {f:'br',t:'api',l:'confirm: đã lưu M42',c:'front',d:'<p>API chờ đúng tín hiệu này rồi mới trả lời client.</p>'},
+      {f:'api',t:'cl',l:'202 Accepted',c:'ok',d:'<p>Lời hứa với client có căn cứ: dù broker sập lúc này, M42 vẫn còn trên đĩa.</p>'},
+      {f:'br',l:'khởi động lại, M42 vẫn còn',c:'ok',d:'<p>Worker chạy lên sẽ nhận M42 và xử lý J42.</p>'}]},
+    {name:'Không chờ confirm',icon:'zap',title:'Trả 202 khi chưa biết broker đã lưu chưa',intro:'<p>API gửi message rồi trả <code>202</code> ngay, không chờ broker báo đã lưu.</p>',steps:[
+      {f:'cl',t:'api',l:'POST /summaries',d:''},
+      {f:'api',t:'db',l:'lưu J42 QUEUED',d:''},
+      {f:'api',t:'br',l:'publish M42',d:''},
+      {f:'api',t:'cl',l:'202 Accepted',c:'ok',d:'<p>API trả <code>202</code> trong khi chưa biết broker đã lưu M42 hay chưa.</p>'},
+      {f:'br',l:'sập trước khi ghi M42',c:'bad',d:'<p>M42 mới nằm trong bộ nhớ của broker, chưa kịp xuống đĩa.</p>'},
+      {f:'br',l:'khởi động lại, M42 mất',c:'bad',d:''},
+      {f:'db',l:'J42 kẹt ở QUEUED',c:'bad',d:'<p>Client đã nhận <code>202</code> nên tin yêu cầu đang được xử lý, nhưng không còn message nào cho worker làm.</p><p>Nếu API chờ confirm, API sẽ không nhận được xác nhận và trả <code>503</code>. Client biết yêu cầu chưa được nhận để gửi lại.</p>'}]},
+    {name:'Queue không durable',icon:'power',title:'Có confirm nhưng broker chỉ giữ trong RAM',intro:'<p>API có chờ confirm, nhưng queue không durable hoặc message không persistent.</p>',steps:[
+      {f:'cl',t:'api',l:'POST /summaries',d:''},
+      {f:'api',t:'db',l:'lưu J42 QUEUED',d:''},
+      {f:'api',t:'br',l:'publish M42',d:''},
+      {f:'br',l:'giữ M42 trong RAM',d:'<p>Queue không durable hoặc message không persistent nên broker không ghi M42 xuống đĩa.</p>'},
+      {f:'br',t:'api',l:'confirm: đã nhận M42',c:'front',d:'<p>Broker vẫn gửi xác nhận, nhưng chỉ có nghĩa là đã nhận vào RAM.</p>'},
+      {f:'api',t:'cl',l:'202 Accepted',c:'ok',d:''},
+      {f:'br',l:'khởi động lại, M42 mất',c:'bad',d:'<p>Queue không durable bị xóa khi broker khởi động lại; message không persistent cũng mất.</p>'},
+      {f:'db',l:'J42 kẹt ở QUEUED',c:'bad',d:'<p>Confirm chỉ đủ tin cậy khi queue durable và message persistent. Thiếu một trong ba điều kiện thì <code>202</code> vẫn có thể sai.</p>'}]},
+    {name:'API sập giữa chừng',icon:'power-off',title:'Đã ghi job nhưng chưa kịp publish',intro:'<p>Trường hợp này xảy ra trước khi có message, nên chờ confirm không giúp được.</p>',steps:[
+      {f:'cl',t:'api',l:'POST /summaries',d:''},
+      {f:'api',t:'db',l:'lưu J42 QUEUED',d:'<p>Job J42 được lưu với trạng thái <code>QUEUED</code>, chưa có bản tóm tắt.</p>'},
+      {f:'api',l:'API sập trước khi publish',c:'bad',d:'<p>Job đã nằm trong DB, còn message chưa được gửi đi.</p>'},
+      {f:'api',t:'cl',l:'lỗi kết nối',c:'bad',d:'<p>Client không biết yêu cầu đã được tạo hay chưa. Nếu gửi lại, có thể tạo thêm một job mới và gọi LLM thêm một lần.</p>'},
+      {f:'db',l:'J42 QUEUED, không có message',c:'bad',d:'<p>Broker không có message nào cho J42, nên không worker nào xử lý job này. Lỗi này gọi là dual-write: ghi vào hai nơi (DB và broker) mà không có cách bảo đảm cả hai cùng thành công. Block 9 xử lý bằng outbox.</p>'}]}
+  ]
+});
+
+/* ===== Kịch bản H0, F1 đến F8 ở mức dữ liệu: mỗi bước là một hàm đổi trạng thái ===== */
+const PRE=[s=>Wk.job(s,'J42','QUEUED'),s=>{Wk.pub(s,'M42');s.http=['202','Accepted, J42']}];
+const GIVE=s=>{Wk.give(s,'M42');Wk.att(s,'M42','RUNNING')};
+const LLM=s=>Wk.llm(s);
+const COMMIT=s=>{Wk.commit(s,'J42');Wk.out(s,'SUCCEEDED')};
+const ACK=s=>Wk.ack(s,'M42');
+const CRASH=s=>Wk.crash(s);
+const REDO=s=>{s.up.w=1;Wk.give(s,'M42');Wk.att(s,'M42','RUNNING',{re:true})};
+// Mỗi lần thử lỗi tạm thời vẫn là một lời gọi tới mock-llm (429 hoặc 503).
+const TR=(n,t,wait)=>s=>{if(n>1)Wk.back(s,'M42');Wk.give(s,'M42');Wk.llm(s);Wk.att(s,'M42','TRANSIENT_ERROR',{t});Wk.toRetry(s,'M42',wait)};
+const SCN={
+  H0:[...PRE,GIVE,LLM,COMMIT,ACK],
+  F1:[...PRE,GIVE,CRASH,REDO,LLM,COMMIT,ACK],
+  F2:[...PRE,TR(1,'0 s','1 s'),TR(2,'1 s','3 s'),s=>{Wk.back(s,'M42');Wk.give(s,'M42');Wk.llm(s);Wk.att(s,'M42','SUCCEEDED',{t:'4 s'});Wk.commit(s,'J42')},ACK],
+  F3:[s=>Wk.job(s,'J43','QUEUED'),s=>{Wk.pub(s,'M43');s.http=['202','Accepted, J43']},s=>{Wk.give(s,'M43');Wk.att(s,'M43','PERMANENT_ERROR',{t:'0 s'})},s=>Wk.job(s,'J43','DEAD_LETTERED'),s=>Wk.toDlq(s,'M43','PERMANENT',1)],
+  F4:[...PRE,TR(1,'0 s','1 s'),TR(2,'1 s','3 s'),TR(3,'4 s','9 s'),
+    s=>{Wk.back(s,'M42');Wk.give(s,'M42');Wk.llm(s);Wk.att(s,'M42','TRANSIENT_ERROR',{t:'13 s'});Wk.job(s,'J42','DEAD_LETTERED');Wk.toDlq(s,'M42','TRANSIENT',4)},
+    s=>{s.dlq=[];Wk.job(s,'J42','QUEUED');Wk.pub(s,'M42')},
+    s=>{Wk.give(s,'M42');Wk.llm(s);Wk.att(s,'M42','SUCCEEDED',{t:'replay'});Wk.commit(s,'J42')},ACK],
+  F5:[...PRE,GIVE,LLM,COMMIT,CRASH,REDO,s=>Wk.out(s,'DUPLICATE'),ACK],
+  // Version 1 (J70) chậm trên W1, version 2 (J71) nhanh trên W2 và commit trước.
+  F7:[s=>{Wk.job(s,'J70','QUEUED');Wk.job(s,'J71','QUEUED');Wk.pub(s,'M70');Wk.pub(s,'M71')},
+    s=>{Wk.give(s,'M70','W1');Wk.att(s,'M70','RUNNING',{w:'W1'});Wk.give(s,'M71','W2');Wk.att(s,'M71','RUNNING',{w:'W2'})},
+    s=>{Wk.llm(s);Wk.commit(s,'J71',2);s.att.find(a=>a.m==='M71').out='SUCCEEDED';Wk.ack(s,'M71')},
+    s=>{Wk.llm(s);Wk.commit(s,'J70',1);s.att.find(a=>a.m==='M70').out='SUCCEEDED';Wk.ack(s,'M70')}],
+  F8:[...PRE,GIVE,LLM,CRASH,REDO,LLM,COMMIT,ACK]
+};
+
+/* ===== D2: prefetch ===== */
+// 20 message và 2 phút mỗi message là giả định; W1 kết nối trước W2.
+(()=>{
+  const svg=$('#pf-svg');let killed=false;const N=20;
+  function draw(){
+    const pf=+$('#pf-n').value;$('#pf-v').textContent=pf;
+    const w1=killed?0:Math.min(pf,N),w2=Math.min(pf,N-Math.min(pf,N)),ready=N-w1-w2,re=killed?Math.min(pf,N):0;
+    let s='';
+    s+=`<rect x="20" y="20" width="960" height="150" rx="16" style="fill:#fff;stroke:${COL.bd};stroke-width:2"/>${svgIc('inbox',36,32,26,COL.p)}${T(70,52,`Queue summaries: ${ready} message ready`,st(700,'0.7692rem',COL.fg))}`;
+    const chips=(x0,y,n,c,bg,lab)=>{let r='';for(let i=0;i<n;i++){const x=x0+(i%20)*46;r+=`<rect x="${x}" y="${y}" width="40" height="40" rx="8" style="fill:${bg};stroke:${c};stroke-width:2"/>`}return r+(lab?T(x0,y+62,lab,st(600,'0.5769rem',c)):'')};
+    s+=chips(36,76,ready,COL.b,COL.bbg,re?`${re} message quay lại queue, có cờ redelivered`:'');
+    if(re)for(let i=0;i<re;i++){const x=36+(i%20)*46;s+=`<rect x="${x}" y="76" width="40" height="40" rx="8" style="fill:${COL.obg};stroke:${COL.o};stroke-width:2"/>`}
+    const wk=(y,name,n,dead)=>`<rect x="20" y="${y}" width="960" height="160" rx="16" style="fill:${dead?'#f4f0ea':'#fff'};stroke:${dead?COL.r:COL.bd};stroke-width:2;${dead?'stroke-dasharray:9 6':''}"/>${svgIc('terminal',36,y+12,26,COL.p)}${T(70,y+32,`${name}: ${dead?'đã sập':n+' message chưa ack'}`,st(700,'0.7692rem',dead?COL.r:COL.fg))}${dead?'':chips(36,y+56,n,COL.o,COL.obg,n?`xử lý lần lượt hết số này mất khoảng ${n*2} phút (giả định)`:'không có việc')}`;
+    s+=wk(190,'W1',w1,killed)+wk(370,'W2',w2,false);
+    svg.innerHTML=s;
+    $('#pf-res').innerHTML=`<div class="small"><b>Prefetch</b> là số message tối đa broker giao trước cho một worker khi worker đó chưa ack. Broker không chờ worker xử lý xong mới giao message tiếp theo.</div>`+(killed?`<h4 style="margin:0">${icon('power-off')} W1 sập</h4><div class="small">${re} message W1 đang giữ quay về ready, có cờ <code>redelivered</code>. Có thể W1 đã commit xong vài message trong số đó, nên worker nhận lại phải xử lý lặp giống F5.</div><div class="note">${icon('triangle-alert')}<span>Prefetch càng lớn thì khi một worker sập, càng nhiều message bị giao lại cùng lúc.</span></div>`:`<h4 style="margin:0">${icon('users')} W1 giữ ${w1}, W2 giữ ${w2}</h4><div class="small">${w2===0?'W1 kết nối trước nên nhận hết 20 message, W2 không có việc để làm.':ready?`Còn ${ready} message chờ trong queue đến khi có worker ack.`:'Không còn message nào ở trạng thái ready.'}</div><div class="note b">${icon('lightbulb')}<span>Prefetch nhỏ chia việc đều hơn và ít message bị giao lại khi worker sập. Prefetch lớn giúp worker không phải chờ broker giao message tiếp theo. Ghi giá trị nhóm chọn vào bảng cấu hình.</span></div>`);
+    flash($('#pf-res'));
+  }
+  $('#pf-n').oninput=()=>{killed=false;draw()};$('#pf-kill').onclick=()=>{killed=true;draw()};$('#pf-reset').onclick=()=>{killed=false;draw()};draw();
+})();
+
+/* ===== C1: đường đi của message bị lỗi ===== */
+(()=>{
+  let s=arrowDefs('cf',{m:COL.mf,g:COL.g,o:COL.o,r:COL.r,b:COL.b});
+  const e=(d,c,k)=>`<path d="${d}" class="edge" style="stroke:${c}" marker-end="url(#cf-${k})"/>`;
+  const l=(x,y,t,c,a='middle')=>T(x,y,t,`text-anchor="${a}" class="halo" ${st(700,'0.6154rem',c)}`);
+  s+=box(130,120,220,96,'summaries','inbox',{sub:'queue chính'});
+  s+=box(470,120,250,96,'Worker xử lý M42','terminal',{sub:'tách âm thanh, gọi LLM'});
+  s+=box(850,120,240,96,'Thành công','circle-check',{sub:'J42 DONE',stroke:COL.g,ic:COL.g});
+  s+=box(470,340,250,96,'summaries.retry','clock',{sub:'chờ 1, 3, 9 giây',stroke:COL.o,ic:COL.o});
+  s+=box(850,340,240,96,'summaries.dlq','archive',{sub:'J42 DEAD_LETTERED',stroke:COL.r,ic:COL.r});
+  s+=e('M242 120 L340 120',COL.mf,'m')+l(291,104,'giao',COL.mf);
+  s+=e('M597 120 L726 120',COL.g,'g')+l(662,104,'không lỗi',COL.g);
+  s+=e('M470 170 L470 288',COL.o,'o')+l(458,236,'lỗi tạm thời, còn lượt',COL.o,'end');
+  s+=e('M560 170 L782 288',COL.r,'r')+l(690,210,'lỗi vĩnh viễn, hoặc đã đủ 4 lần',COL.r,'start');
+  s+=e('M344 340 L170 340 L170 172',COL.o,'o')+l(258,326,'hết giờ chờ',COL.o);
+  s+=e('M850 390 L850 470 L70 470 L70 172',COL.b,'b')+l(460,458,'replay sau khi sửa nguyên nhân',COL.b);
+  $('#cf-svg').innerHTML=s;
+})();
+
+/* ===== C2: phân loại lỗi ===== */
+(()=>{
+  const OPT=[['retry','Chờ rồi thử lại'],['dlq','Đưa vào DLQ ngay'],['ack','Không phải lỗi: ghi DUPLICATE, ack']];
+  const Q=[
+    ['LLM trả 429: vượt giới hạn số request mỗi phút','retry','Lỗi tạm thời: hạn mức được cấp lại sau một khoảng thời gian. Chờ rồi thử lại, có giới hạn số lần.'],
+    ['Video V9 không có âm thanh','dlq','Lỗi vĩnh viễn: thử lại bao nhiêu lần thì video vẫn không có âm thanh để tóm tắt. Đưa vào DLQ và chuyển job sang DEAD_LETTERED.'],
+    ['DB hủy transaction vì deadlock','retry','Lỗi tạm thời: chạy lại cả transaction từ đầu có thể thành công.'],
+    ['Message không có job_id','dlq','Lỗi vĩnh viễn: message thiếu dữ liệu để xử lý, thử lại vẫn lỗi như cũ.'],
+    ['Nhận M42 khi job J42 đã DONE','ack','Message bị giao lại, giống F5. Việc đã làm xong nên chỉ cần ghi DUPLICATE rồi ack, không gọi LLM lần nữa. Đưa vào DLQ chỉ tạo thêm việc cho người vận hành.'],
+    ['LLM trả 503 vì đang quá tải','retry','Lỗi tạm thời của nhà cung cấp. Nên chờ rồi thử lại; thử lại ngay chỉ dồn thêm request vào dịch vụ đang quá tải.']
+  ];
+  const ans=Q.map(()=>null);let cur=-1;
+  function draw(){
+    $('#cl-score').textContent=`Chọn cách xử lý cho từng tình huống: đúng ${ans.filter((a,i)=>a===Q[i][1]).length}/${Q.length}`;
+    // Chỉ hiện giải thích của câu vừa chọn để slide không tràn khi trả lời hết sáu câu.
+    $('#cl-q').innerHTML=Q.map(([q,ok,why],i)=>{const a=ans[i];return `<div class="qz"><div class="t">${i+1}. ${q}</div><div class="row" style="gap:6px;flex-wrap:nowrap">${OPT.map(([k,l])=>`<button class="btn ${a!=null?(k===ok?'y':k===a?'n':''):''}" data-i="${i}" data-k="${k}">${l}</button>`).join('')}</div>${a!=null&&i===cur?`<div class="why ${a===ok?'y':'n'}">${icon(a===ok?'circle-check':'circle-x')} ${why}</div>`:''}</div>`}).join('');
+    $$('#cl-q [data-k]').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;ans[cur]=b.dataset.k;draw()});
+  }
+  draw();
+})();
+
+/* ===== D1: nhiều worker trên một queue ===== */
+(()=>{
+  const MS=[['M1','V1'],['M2','V2'],['M3','V3'],['M4','V1'],['M5','V2'],['M6','V3']];
+  const KC={V1:COL.b,V2:COL.o,V3:COL.c};const KB={V1:COL.bbg,V2:COL.obg,V3:COL.cbg};
+  const chip=(x,y,[m,o])=>`<rect x="${x}" y="${y}" width="96" height="40" rx="8" style="fill:${KB[o]};stroke:${KC[o]};stroke-width:2"/>${T(x+10,y+26,`${m} ${o}`,st(800,'0.5385rem',KC[o],MO))}`;
+  const col=(x,y,w,h,title,ic,list)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" style="fill:#fff;stroke:${COL.bd};stroke-width:2"/>${svgIc(ic,x+12,y+10,24,COL.p)}${T(x+44,y+28,title,st(700,'0.6154rem',COL.fg))}`+list.map((m,i)=>chip(x+16+(i%2)*104,y+48+Math.floor(i/2)*50,m)).join('');
+  let s=arrowDefs('ds',{m:COL.mf});
+  s+=`<rect x="10" y="20" width="140" height="520" rx="14" style="fill:#fff;stroke:${COL.bd};stroke-width:2"/>${T(80,50,'API gửi',`text-anchor="middle" ${st(700,'0.6538rem',COL.fg)}`)}`;
+  MS.forEach((x,i)=>{s+=chip(32,70+i*72,x)});
+  s+=`<rect x="200" y="200" width="200" height="140" rx="14" style="fill:${COL.mu};stroke:${COL.bd};stroke-width:2"/>${T(300,276,'queue summaries',`text-anchor="middle" ${st(700,'0.6154rem',COL.fg,MO)}`)}`;
+  s+=`<line x1="152" y1="270" x2="196" y2="270" class="edge" marker-end="url(#ds-m)"/><path d="M402 250 L520 140" class="edge" marker-end="url(#ds-m)"/><path d="M402 290 L520 400" class="edge" marker-end="url(#ds-m)"/>`;
+  s+=col(530,40,240,220,'Worker W1','terminal',[MS[0],MS[2],MS[4]])+col(530,300,240,220,'Worker W2','terminal',[MS[1],MS[3],MS[5]]);
+  $('#ds-svg').innerHTML=s;
+})();
+
+/* ===== D3: ordering ===== */
+// M1 (version 1) mất 3 giây, M2 (version 2) mất 1 giây là giả định để tạo thứ tự hoàn tất đảo ngược.
+(()=>{
+  const svg=$('#od-svg');let mode='par';
+  const M={
+    par:{b:'Hai worker, không kiểm soát',fin:1,ok:false,d:'<p>M1 (version 1) được giao trước nhưng LLM trả lời sau 3 giây. M2 (version 2) chỉ mất 1 giây trên W2 nên commit trước. Đến giây thứ 3, M1 commit và ghi đè bản tóm tắt mới bằng bản cũ.</p>'},
+    key:{b:'Cùng key thì một worker xử lý',fin:2,ok:true,d:'<p>Các message cùng <code>video_id</code> được xử lý lần lượt trên một worker; M2 chờ M1 xong, hoàn tất ở giây thứ 4.</p><p>Kafka làm việc này bằng partition: message cùng key vào cùng partition, mỗi partition chỉ giao cho một worker trong consumer group. Với RabbitMQ, một cách làm là chia nhiều queue theo key.</p>'},
+    ver:{b:'Kiểm tra version',fin:2,ok:true,d:'<p>W1 vẫn lưu bản tóm tắt version 1 cho job của nó, nhưng chỉ cập nhật bản hiện tại của V7 khi <code>current_version</code> nhỏ hơn 1. Lúc đó V7 đã ở version 2 nên lệnh UPDATE không đổi dòng nào. Lab dùng cách này ở F7.</p>'}
+  };
+  const X=t=>220+t*170;
+  function draw(){
+    modeBtns($('#od-mode'),Object.entries(M).map(([k,v])=>[k,v.b]),mode,m=>{mode=m;draw()});
+    let s='';
+    const rows=[['W1',110],['W2',230],['V7 bản hiện tại',380]];
+    rows.forEach(([l,y])=>{s+=T(20,y+6,l,st(700,'0.6923rem',COL.fg))+`<line x1="${X(0)}" y1="${y}" x2="${X(4.5)}" y2="${y}" style="stroke:${COL.bd};stroke-width:2;stroke-dasharray:4 5"/>`});
+    for(let t=0;t<=4;t++)s+=T(X(t),500,t,`text-anchor="middle" ${st(600,'0.6154rem',COL.mf,MO)}`);
+    s+=T(X(4.5),530,'giây',`text-anchor="end" ${st(600,'0.6154rem',COL.mf)}`);
+    const bar=(t1,t2,y,l,c,bg)=>`<rect x="${X(t1)}" y="${y-20}" width="${X(t2)-X(t1)}" height="40" rx="8" style="fill:${bg};stroke:${c};stroke-width:2"/>${T(X(t1)+10,y+6,l,st(700,'0.5769rem',c))}`;
+    const val=(t,c,l)=>`<circle cx="${X(t)}" cy="380" r="10" style="fill:${c}"/>${T(X(t),352,l,`text-anchor="middle" class="halo" ${st(800,'0.5769rem',c)}`)}`;
+    s+=val(0,COL.mf,'chưa có');
+    if(mode==='par'){s+=bar(0,3,110,'M1: version 1',COL.b,COL.bbg)+bar(0,1,230,'M2: version 2',COL.o,COL.obg)+val(1,COL.o,'version 2')+val(3,COL.r,'version 1 (cũ)')}
+    else if(mode==='key'){s+=bar(0,3,110,'M1: version 1',COL.b,COL.bbg)+bar(3,4,110,'M2: v2',COL.o,COL.obg)+T(X(0)+10,236,'không nhận message của V7',st(600,'0.5769rem',COL.mf))+val(3,COL.b,'version 1')+val(4,COL.g,'version 2')}
+    else{s+=bar(0,3,110,'M1: version 1',COL.b,COL.bbg)+bar(0,1,230,'M2: version 2',COL.o,COL.obg)+val(1,COL.g,'version 2')+`<circle cx="${X(3)}" cy="380" r="10" style="fill:#fff;stroke:${COL.mf};stroke-width:3"/>${T(X(3),352,'không dòng nào đổi',`text-anchor="middle" class="halo" ${st(700,'0.5769rem',COL.mf)}`)}`}
+    const f=M[mode];
+    s+=`<rect x="${X(4.5)-250}" y="420" width="260" height="46" rx="10" style="fill:${f.ok?COL.gbg:COL.rbg}"/>${T(X(4.5)-120,450,`Bản hiện tại: version ${f.fin}`,`text-anchor="middle" ${st(800,'0.6538rem',f.ok?COL.g:COL.r)}`)}`;
+    svg.innerHTML=s;
+    $('#od-cap').innerHTML=`<div class="small col" style="gap:8px">${f.d}</div>${f.ok?'':`<div class="note r" style="margin-top:auto">${icon('triangle-alert')}<span>Queue giao đúng thứ tự, nhưng worker nào xử lý nhanh hơn thì commit trước. Retry cũng có thể làm message cũ đến sau message mới.</span></div>`}`;
+    flash($('#od-cap'));
+  }
+  draw();
+})();
+
+/* ===== E1: kiến trúc bài thực hành ===== */
+(()=>{
+  let s=arrowDefs('lb',{m:COL.mf,r:COL.r});
+  s+=`<rect x="20" y="8" width="960" height="62" rx="16" style="fill:${COL.bbg};stroke:${COL.b};stroke-width:2.5"/>${svgIc('flask-conical',40,24,30,COL.b)}${T(84,46,'Test và script kiểm thử của nhóm',st(700,'0.8077rem',COL.fg))}${T(450,46,'gọi API, đọc DB, đếm message, đếm lời gọi LLM',st(500,'0.6538rem',COL.mf))}`;
+  s+=box(130,200,220,110,'API','server',{sub:'202 hoặc 503'});
+  s+=`<rect x="270" y="110" width="330" height="290" rx="18" style="fill:#fff;stroke:${COL.e};stroke-width:2.5"/>${svgIc('inbox',288,124,26,COL.e)}${T(322,145,'RabbitMQ',st(700,'0.7692rem',COL.fg))}`;
+  [['summaries','queue chính, durable'],['summaries.retry','chờ hết TTL rồi quay về summaries'],['summaries.dlq','message hết lượt hoặc lỗi vĩnh viễn']].forEach(([n,sub],k)=>{const y=170+k*74;s+=`<rect x="290" y="${y}" width="290" height="60" rx="12" style="fill:${COL.mu}"/>${T(306,y+26,n,st(700,'0.6154rem',COL.fg,MO))}${T(306,y+48,sub,st(500,'0.5385rem',COL.mf))}`});
+  s+=box(860,200,200,90,'Worker W1','terminal')+box(860,330,200,90,'Worker W2','terminal');
+  // Queue chính chia message cho hai worker. Điểm rẽ nhánh (x=670) cách xa cả khung RabbitMQ lẫn đầu mũi tên.
+  s+=`<path d="M582 200 L756 200" class="edge" marker-end="url(#lb-m)"/><path d="M670 200 L670 330 L756 330" class="edge" marker-end="url(#lb-m)"/><line x1="242" y1="200" x2="286" y2="200" class="edge" marker-end="url(#lb-m)"/>`;
+  // Đường từ worker sang DB chạy ở y=425, cách đáy RabbitMQ 25 và đỉnh hàng DB 35, đủ chỗ cho đầu mũi tên.
+  s+=`<rect x="20" y="460" width="620" height="80" rx="16" style="fill:#fff;stroke:${COL.e};stroke-width:2.5"/>${svgIc('database',40,482,30,COL.e)}${T(84,492,'PostgreSQL',st(700,'0.6923rem',COL.fg))}${T(84,522,'videos, jobs, summaries UNIQUE(job_id), processing_attempts',st(500,'0.5385rem',COL.mf,MO))}`;
+  s+=`<rect x="660" y="460" width="320" height="80" rx="16" style="fill:#fff;stroke:${COL.e};stroke-width:2.5"/>${svgIc('sparkles',680,482,30,COL.e)}${T(724,492,'mock-llm',st(700,'0.6923rem',COL.fg,MO))}${T(724,522,'độ trễ, 429, 503, bộ đếm',st(500,'0.5385rem',COL.mf))}`;
+  s+=`<line x1="130" y1="256" x2="130" y2="456" class="edge" marker-end="url(#lb-m)"/><path d="M800 375 L800 425 L520 425 L520 456" class="edge" marker-end="url(#lb-m)"/><line x1="910" y1="375" x2="910" y2="456" class="edge" marker-end="url(#lb-m)"/>`;
+  s+=`<rect x="20" y="563" width="960" height="80" rx="18" style="fill:${COL.obg};stroke:${COL.o};stroke-width:2;stroke-dasharray:9 6"/>`;
+  ['llm: 429 N lần','llm: 503 kéo dài','V9 không âm thanh','before_llm_call','after_llm_before_commit','after_commit_before_ack'].forEach((m,k)=>{const x=40+(k%3)*315,y=581+Math.floor(k/3)*32;s+=`${svgIc('zap',x,y,22,COL.o)}${T(x+30,y+17,m,st(600,'0.6154rem',COL.fg,MO))}`});
+  $('#lab-svg').innerHTML=s;
+})();
+
+/* ===== E4: oracle ===== */
+(()=>{
+  const f6=(()=>{const s=W0();['J50','J51','J52','J53','J54'].forEach(o=>Wk.job(s,o,'DONE'));Wk.job(s,'J55','QUEUED');s.sums=['J50','J51','J52','J53','J54'];s.llm=5;s.http=['503','broker dừng, J55'];return s})();
+  // Snapshot giữa chừng: F1, F5, F8 dừng ngay sau khi W1 sập; F4 dừng ngay sau lần thử thứ 4.
+  const O=[
+    {id:'B0',f:'Bản đồng bộ để so sánh',k:'Đo',o:'Thời gian phản hồi của <code>POST /summaries</code> ở bản đồng bộ và bản dùng queue; thời điểm job chuyển sang <code>DONE</code> ở bản dùng queue. Nhóm điền số đo từ lần chạy thật.',snaps:[]},
+    {id:'H0',f:'Chạy bình thường',k:'Test tự động',o:'Client nhận <code>202</code> trước khi xử lý xong. Cuối cùng job <code>DONE</code>, một bản tóm tắt, một lần xử lý <code>SUCCEEDED</code>, LLM được gọi 1 lần; queue chính và DLQ đều trống.',snaps:[['cuối cùng',finalOf(SCN.H0)]]},
+    {id:'H1',f:'20 job, hai worker',k:'Demo',o:'20 job <code>DONE</code>, 20 bản tóm tắt. Bảng attempts cho thấy cả hai worker đều có xử lý; không job nào có hai lần <code>SUCCEEDED</code>; LLM được gọi 20 lần.',snaps:[]},
+    {id:'F1',f:'Tắt worker tại before_llm_call',k:'Demo, tắt thật',o:'Khi worker đang tắt: job còn <code>QUEUED</code>, message chờ giao lại, LLM chưa được gọi. Sau khi bật lại: message có cờ redelivered, job <code>DONE</code>, một bản tóm tắt, LLM được gọi 1 lần.',snaps:[['khi W1 đang tắt',stateAt(SCN.F1,4)],['cuối cùng',finalOf(SCN.F1)]]},
+    {id:'F2',f:'LLM trả 429 hai lần đầu',k:'Test tự động',o:'Ba lần xử lý: hai <code>TRANSIENT_ERROR</code>, một <code>SUCCEEDED</code>. Khoảng cách giữa các lần đúng policy. Một bản tóm tắt; LLM được gọi 3 lần.',snaps:[['cuối cùng',finalOf(SCN.F2)]]},
+    {id:'F3',f:'Video V9 không có âm thanh',k:'Test tự động',o:'Một lần <code>PERMANENT_ERROR</code>, không thử lại, LLM không được gọi. Job <code>DEAD_LETTERED</code>. Message trong DLQ có <code>message_id</code>, loại lỗi, số lần xử lý, <code>correlation_id</code>.',snaps:[['cuối cùng',finalOf(SCN.F3)]]},
+    {id:'F4',f:'LLM trả 503 kéo dài, rồi replay',k:'Test tự động',o:'Bốn lần <code>TRANSIENT_ERROR</code>, job <code>DEAD_LETTERED</code>, message nằm trong DLQ. Gỡ fault rồi replay cùng <code>message_id</code>: job <code>DONE</code>, một bản tóm tắt, DLQ trống.',snaps:[['trước khi replay',stateAt(SCN.F4,6)],['cuối cùng',finalOf(SCN.F4)]]},
+    {id:'F5',f:'Tắt worker tại after_commit_before_ack',k:'Demo, tắt thật',o:'Trước khi tắt, DB đã có bản tóm tắt. Sau khi bật lại: message được giao lại, lần xử lý mới ghi <code>DUPLICATE</code>, vẫn một bản tóm tắt, LLM vẫn chỉ được gọi 1 lần, message đã được ack.',snaps:[['khi W1 đang tắt',stateAt(SCN.F5,6)],['cuối cùng',finalOf(SCN.F5)]]},
+    {id:'F6',f:'Broker dừng rồi chạy lại',k:'Demo',o:'Khi broker dừng, <code>POST /summaries</code> trả <code>503</code>; ghi lại job <code>QUEUED</code> không có message (khoảng hở 1). Với 5 job đã nhận trước khi broker dừng, lúc worker đang tắt: sau khi bật lại broker và worker, cả 5 job <code>DONE</code>.',snaps:[['cuối cùng',f6]]},
+    {id:'F7',f:'Hai yêu cầu tóm tắt lại video V7',k:'Test tự động',o:'Version 1 (J70) xong sau version 2 (J71). Cả hai job <code>DONE</code>; <code>GET /videos/V7/summary</code> trả bản của version 2.',snaps:[['cuối cùng',finalOf(SCN.F7)]]},
+    {id:'F8',f:'Tắt worker tại after_llm_before_commit',k:'Demo, tắt thật',o:'Sau khi bật lại: message được giao lại, job <code>DONE</code>, một bản tóm tắt, nhưng LLM được gọi 2 lần. Ghi nhận là khoảng hở 3, không chấm là lỗi.',snaps:[['khi W1 đang tắt',stateAt(SCN.F8,5)],['cuối cùng',finalOf(SCN.F8)]]}
+  ];
+  let cur=1;
+  function draw(){
+    $('#orc-list').innerHTML=O.map((x,i)=>`<button class="btn ${i===cur?'on':''}" data-i="${i}" style="justify-content:flex-start;font-weight:500"><span class="pill ${x.k.startsWith('Demo')?'g':x.k==='Đo'?'b':'ok'}" style="min-width:52px;justify-content:center">${x.id}</span><span>${x.f}</span></button>`).join('');
+    $$('#orc-list [data-i]').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;draw()});
+    const x=O[cur];
+    $('#orc-panel').innerHTML=`<div class="row"><h3 style="margin:0">${x.id}: ${x.f}</h3><span class="pill ${x.k.startsWith('Demo')?'g':'ok'}" style="margin-left:auto">${x.k}</span></div><div class="small"><b>Kết quả mong đợi:</b> ${x.o}</div>${x.snaps.map(([l,s])=>`<div class="tiny muted" style="font-weight:700">SNAPSHOT ${l.toUpperCase()}</div>${miniWorld(s)}`).join('')}<div class="note b" style="margin-top:auto">${icon('clipboard-check')}<span>Bằng chứng cần nộp cho mọi tình huống: snapshot các bảng <code>jobs</code>, <code>summaries</code>, <code>processing_attempts</code>; số message ready và unacked ở từng queue; số lần mock-llm được gọi; marker, lệnh tắt và bật process, thời điểm xảy ra.</span></div>`;
+    flash($('#orc-panel'));
+  }
+  draw();
+})();
+
+/* ===== Câu hỏi kết thúc ===== */
+(()=>{
+  const Q=[
+    ['Worker bật auto-ack và sập khi đang xử lý. Message đang ở đâu, job ở trạng thái nào?','Broker đã xóa message vì coi như đã xong. Job kẹt ở QUEUED và không còn message nào để giao lại.'],
+    ['Worker commit xong thì sập, chưa kịp ack. Khi worker chạy lại, broker làm gì, và dữ liệu nào chặn việc gọi LLM lần hai?','Broker giao lại message. Worker đọc J42 thấy DONE nên ghi DUPLICATE và không gọi LLM; UNIQUE(job_id) chặn bản tóm tắt thứ hai. Ack không chứng minh nghiệp vụ đã đúng.'],
+    ['Worker gọi LLM xong thì sập, chưa commit. Khi message được giao lại, LLM bị gọi mấy lần, và UNIQUE(job_id) có chặn được không?','Hai lần. UNIQUE chỉ chặn bản tóm tắt thứ hai trong DB, không chặn lời gọi đã gửi ra ngoài. Đây là khoảng hở 3; bộ đếm mock-llm ở F8 là bằng chứng.'],
+    ['Vì sao lỗi video không có âm thanh không nên thử lại?','Lỗi này là vĩnh viễn. Thử lại chỉ làm chậm việc đưa vào DLQ và tốn tài nguyên. Cần phân loại theo loại lỗi.'],
+    ['LLM đang trả 429 mà worker dùng nack để đưa message về queue ngay. Chuyện gì xảy ra?','Message được giao lại gần như tức thì; mỗi lần giao lại là một request nữa tới nhà cung cấp đang giới hạn tần suất, nên tiếp tục nhận 429.'],
+    ['Người dùng yêu cầu tóm tắt V7 hai lần với tùy chọn khác nhau, hai worker xử lý. Bản tóm tắt hiện tại có chắc là của yêu cầu sau không?','Không. Thứ tự giao khác thứ tự commit. Cần cho các message cùng video dùng chung key, hoặc chỉ cập nhật bản hiện tại khi version mới hơn (F7).'],
+    ['Broker quảng cáo exactly-once. Lời gọi LLM có chắc chỉ bị tính tiền một lần không?','Không. Cam kết đó chỉ đúng trong phạm vi broker hoặc stream processor tự định nghĩa. Lời gọi ra bên ngoài nằm ngoài phạm vi đó.'],
+    ['API ghi job rồi sập trước khi publish. Job ở trạng thái nào, ai xử lý tiếp?','Job ở QUEUED nhưng không có message, nên không worker nào nhận. Lỗi này là dual-write; Block 9 xử lý bằng outbox.']
+  ];
+  $('#ex-q').innerHTML=Q.map(([q,a],i)=>`<div class="card col" style="padding:10px 16px;gap:6px;flex:none"><div class="row" style="flex-wrap:nowrap;align-items:flex-start"><div style="font-weight:600;font-size:0.7692rem;flex:1">${i+1}. ${q}</div><button class="btn sm" data-ex="${i}">${icon('lightbulb')}Gợi ý</button></div><div class="small muted" id="ex-a${i}" hidden>${a}</div></div>`).join('');
+  $$('[data-ex]').forEach(b=>b.onclick=()=>{const el=$('#ex-a'+b.dataset.ex),open=el.hidden;$$('[id^=ex-a]').forEach(x=>x.hidden=true);el.hidden=!open;if(open)flash(el)});
+})();
+
+hydrateIcons();
+function fromHash(){const v=Number(location.hash.slice(1));go(Number.isInteger(v)&&v>0?v-1:0)}
+addEventListener('hashchange',fromHash);fromHash();
+</script>
+</body>
+</html>

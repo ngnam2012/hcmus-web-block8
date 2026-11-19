@@ -1,4 +1,6 @@
+
 import { randomUUID } from 'node:crypto';
+import { extractYouTubeId, canonicalYouTubeUrl, MAX_TRANSCRIPT_CHARS } from './transcript.js';
 
 export class ProcessingError extends Error {
   constructor(type, transient) { super(type); this.type = type; this.transient = transient; }
@@ -41,14 +43,31 @@ export function validateVideoInput(body) {
   const hasAudio = body.has_audio === undefined ? true : body.has_audio;
   if (typeof hasAudio !== 'boolean') throw new Error('Invalid has_audio');
   const transcript = body.transcript === undefined ? '' : body.transcript;
-  if (typeof transcript !== 'string' || transcript.length > 50000) throw new Error('Invalid transcript');
-  if (hasAudio && !transcript.trim()) throw new Error('Transcript is required when has_audio is true');
-  return {
+  if (typeof transcript !== 'string' || transcript.length > MAX_TRANSCRIPT_CHARS) throw new Error('Invalid transcript');
+
+  let videoUrl = '';
+  if (body.video_url !== undefined && body.video_url !== null && body.video_url !== '') {
+    if (typeof body.video_url !== 'string' || body.video_url.trim().length > 1000) throw new Error('Invalid video_url');
+    const trimmed = body.video_url.trim();
+    let parsed;
+    try { parsed = new URL(trimmed); } catch { throw new Error('Invalid video_url'); }
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid video_url');
+    const ytId = extractYouTubeId(trimmed);
+    videoUrl = ytId ? canonicalYouTubeUrl(ytId) : parsed.toString();
+  }
+
+  const isYouTube = Boolean(videoUrl && extractYouTubeId(videoUrl));
+  if (hasAudio && !transcript.trim() && !isYouTube) {
+    throw new Error('Transcript is required when has_audio is true');
+  }
+  const result = {
     video_id: rawId.trim(),
     title,
     transcript: transcript.trim(),
     has_audio: hasAudio,
   };
+  if (videoUrl) result.video_url = videoUrl;
+  return result;
 }
 
 export function messageFor(job) {

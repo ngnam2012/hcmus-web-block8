@@ -3,6 +3,10 @@ import { config } from './config.js';
 export const pool = new pg.Pool({ connectionString: config.databaseUrl, max: 12, connectionTimeoutMillis: 3000 });
 pool.on('error', error => console.error('DB_POOL_ERROR', error.message));
 
+export async function ensureSchema() {
+  await pool.query('ALTER TABLE videos ADD COLUMN IF NOT EXISTS video_url text');
+}
+
 export async function transaction(fn) {
   const client = await pool.connect();
   try {

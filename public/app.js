@@ -71,23 +71,67 @@ $('#batch').onclick = async () => {
   }
 };
 
+const DEFAULT_LINK_HINT = 'Dán link YouTube để tự lấy tiêu đề & phụ đề (hoặc để Gemini tóm tắt trực tiếp qua link nếu video chưa có phụ đề).';
+
+$('#fetchLink').onclick = async () => {
+  const url = $('#newVideoUrl').value.trim();
+  if (!url) {
+    $('#linkStatus').textContent = 'Hãy dán link YouTube hoặc link file phụ đề trước.';
+    return;
+  }
+  $('#fetchLink').disabled = true;
+  $('#linkStatus').textContent = 'Đang lấy tiêu đề và transcript từ link...';
+  try {
+    const res = await api('/videos/transcript-from-link', 'POST', {
+      url,
+      language: $('#language').value,
+    });
+    if (res.video_url) $('#newVideoUrl').value = res.video_url;
+    if (res.title) $('#newTitle').value = res.title;
+    $('#newTranscript').value = res.transcript || '';
+    if (res.transcript_found) {
+      const langNote = res.track_language ? `, track: ${res.track_language}` : '';
+      $('#linkStatus').textContent = `Đã lấy transcript (${res.transcript.length} ký tự${langNote}). Bấm "Lưu video mới" để tạo video.`;
+    } else {
+      $('#linkStatus').textContent = res.warning || 'Chưa có phụ đề rời; bấm "Lưu video mới" để Gemini phân tích trực tiếp qua link YouTube.';
+    }
+  } catch (err) {
+    $('#linkStatus').textContent = 'Lỗi lấy từ link: ' + err.message;
+  } finally {
+    $('#fetchLink').disabled = false;
+  }
+};
+
 $('#videoForm').onsubmit = async e => {
   e.preventDefault();
   $('#createVideo').disabled = true;
   try {
+    const videoUrl = $('#newVideoUrl').value.trim();
+    const title = $('#newTitle').value.trim();
+    const transcript = $('#newTranscript').value;
+    if (!title && !videoUrl) {
+      throw Error('Hãy nhập tiêu đề hoặc dán link video/phụ đề');
+    }
     const payload = {
-      title: $('#newTitle').value,
-      transcript: $('#newTranscript').value,
+      title,
+      transcript,
       has_audio: $('#newHasAudio').checked,
+      language: $('#language').value,
     };
+    if (videoUrl) {
+      payload.video_url = videoUrl;
+      if (!title || !transcript.trim()) payload.auto_fetch = true;
+    }
     const rawId = $('#newVideoId').value.trim();
     if (rawId) payload.video_id = rawId;
     const v = await api('/videos', 'POST', payload);
     notify(`Đã thêm video ${v.video_id}: ${v.title}`);
+    $('#newVideoUrl').value = '';
     $('#newVideoId').value = '';
     $('#newTitle').value = '';
     $('#newTranscript').value = '';
     $('#newHasAudio').checked = true;
+    $('#linkStatus').textContent = DEFAULT_LINK_HINT;
     await refresh();
     $('#video').value = v.video_id;
   } catch (err) {
@@ -186,12 +230,18 @@ function renderDetail() {
   const v = data.tables.videos.find(v => v.video_id === j.video_id);
   const detailEl = $('#jobDetail');
   const detailsOpen = detailEl.querySelector('details')?.open;
+  const safeUrl = v?.video_url && /^https?:\/\//i.test(v.video_url) ? v.video_url : '';
+  const sourceFallback = v?.has_audio === false
+    ? '(Video không có âm thanh)'
+    : safeUrl
+      ? '(Không có transcript rời — Gemini phân tích trực tiếp từ link video)'
+      : 'Trống';
   const html = `
     <p><span class="badge ${j.status}">${j.status}</span> · ${esc(j.video_id)} / v${j.version} · Bản hiện tại v${v?.current_version ?? 0}</p>
-    <p>Job: <code>${esc(j.job_id)}</code><br>Message: <code>${esc(j.message_id)}</code><br>Correlation: <code>${esc(j.correlation_id)}</code></p>
+    <p>Job: <code>${esc(j.job_id)}</code><br>Message: <code>${esc(j.message_id)}</code><br>Correlation: <code>${esc(j.correlation_id)}</code>${safeUrl ? `<br>Link nguồn: <a href="${esc(safeUrl)}" target="_blank" rel="noreferrer">${esc(safeUrl)}</a>` : ''}</p>
     ${j.status === 'DEAD_LETTERED' ? '<button id="replay">Gỡ fault &amp; Replay</button>' : ''}
     <h3>Transcript nguồn</h3>
-    <pre>${esc(v?.transcript || (v?.has_audio === false ? '(Video không có âm thanh)' : 'Trống'))}</pre>
+    <pre>${esc(v?.transcript || sourceFallback)}</pre>
     <h3>Kết quả tóm tắt</h3>
     <pre>${esc(s?.content || 'Chưa có kết quả')}</pre>
     <h3>Lịch sử xử lý</h3>

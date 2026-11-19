@@ -2,6 +2,7 @@ CREATE TABLE videos (
   video_id text PRIMARY KEY,
   title text NOT NULL,
   transcript text NOT NULL,
+  video_url text,
   has_audio boolean NOT NULL DEFAULT true,
   next_version integer NOT NULL DEFAULT 0,
   current_version integer NOT NULL DEFAULT 0,

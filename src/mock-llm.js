@@ -22,8 +22,13 @@ app.get('/health', async (_req, res) => {
 });
 
 app.post('/summarize', async (req, res) => {
-  const { job_id: jobId, title = '', transcript, options = {} } = req.body;
-  if (!/^[0-9a-f-]{36}$/i.test(jobId || '') || typeof transcript !== 'string') {
+  const { job_id: jobId, title = '', transcript = '', video_url: videoUrl = '', options = {} } = req.body;
+  if (
+    !/^[0-9a-f-]{36}$/i.test(jobId || '') ||
+    typeof transcript !== 'string' ||
+    typeof videoUrl !== 'string' ||
+    (!transcript.trim() && !videoUrl.trim())
+  ) {
     return res.status(400).json({ error: 'Invalid request' });
   }
 
@@ -60,20 +65,23 @@ app.post('/summarize', async (req, res) => {
 
   if (config.llmProvider === 'mock') {
     await pool.query('UPDATE mock_calls SET finished_at=clock_timestamp() WHERE call_id=$1', [call.call_id]);
+    const preview = transcript.trim() ? transcript.slice(0, 240) : `Video URL: ${videoUrl}`;
     return res.json({
-      summary: `[MOCK; ${options.language || 'vi'}; ${options.style || 'short'}] ${transcript.slice(0, 240)}`,
+      summary: `[MOCK; ${options.language || 'vi'}; ${options.style || 'short'}] ${preview}`,
       provider: 'mock',
     });
   }
 
   try {
+    const directVideoMode = !transcript.trim() && Boolean(videoUrl.trim());
     const result = await summarizeWithGemini({
       title,
       transcript,
+      videoUrl,
       options,
       apiKey: config.geminiApiKey,
       model: config.geminiModel,
-      timeoutMs: config.llmTimeoutMs,
+      timeoutMs: Math.max(config.llmTimeoutMs, directVideoMode ? 60000 : 30000),
     });
     await pool.query(
       'UPDATE mock_calls SET finished_at=clock_timestamp(), response_status=200 WHERE call_id=$1',

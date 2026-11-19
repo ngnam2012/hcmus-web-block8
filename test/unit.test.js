@@ -2,6 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyStatus, validateOptions, validateFault, validateVideoInput, messageFor } from '../src/domain.js';
 import { buildSummaryPrompt, extractErrorStatus, summarizeWithGemini } from '../src/gemini.js';
+import {
+  extractYouTubeId,
+  canonicalYouTubeUrl,
+  cleanSubtitleText,
+  parseYouTubeCaptionJson3,
+  parseYouTubeCaptionXml,
+  pickCaptionTrack,
+  assertSafePublicHttpUrl,
+} from '../src/transcript.js';
 
 test('retry classification uses status/type, never error text', () => {
   for (const status of [408, 429, 500, 503, 504]) assert.equal(classifyStatus(status).transient, true);
@@ -62,4 +71,79 @@ test('gemini error mapping extracts HTTP status codes and timeouts accurately', 
     () => summarizeWithGemini({ transcript: 'hello', apiKey: '', model: 'gemini-3.5-flash-lite' }),
     err => err.status === 401 && /GEMINI_API_KEY/.test(err.message),
   );
+});
+
+test('youtube url extraction, subtitle cleanup and track selection work reliably', () => {
+  assert.equal(extractYouTubeId('https://www.youtube.com/watch?v=9hE5-98ZeCg&t=10s'), '9hE5-98ZeCg');
+  assert.equal(extractYouTubeId('https://youtu.be/9hE5-98ZeCg?si=abc'), '9hE5-98ZeCg');
+  assert.equal(extractYouTubeId('https://youtube.com/shorts/9hE5-98ZeCg'), '9hE5-98ZeCg');
+  assert.equal(extractYouTubeId('https://example.com/watch?v=9hE5-98ZeCg'), null);
+  assert.equal(canonicalYouTubeUrl('9hE5-98ZeCg'), 'https://www.youtube.com/watch?v=9hE5-98ZeCg');
+
+  const vtt = [
+    'WEBVTT',
+    'Kind: captions',
+    'Language: vi',
+    '',
+    '00:00:01.000 --> 00:00:03.000',
+    '<c>Xin chào &amp; cảm ơn</c>',
+    '',
+    '00:00:03.000 --> 00:00:05.000',
+    'Xin chào &amp; cảm ơn',
+    'Dòng thứ hai',
+  ].join('\n');
+  assert.equal(cleanSubtitleText(vtt), 'Xin chào & cảm ơn\nDòng thứ hai');
+
+  const json3 = parseYouTubeCaptionJson3({
+    events: [
+      { segs: [{ utf8: 'Hello ' }, { utf8: 'world' }] },
+      { segs: [{ utf8: 'Hello world' }] },
+      { segs: [{ utf8: 'Second line' }] },
+    ],
+  });
+  assert.equal(json3, 'Hello world\nSecond line');
+
+  const xml = '<transcript><text start="0" dur="2">Line &amp; 1</text><text start="2" dur="2">Line 2</text></transcript>';
+  assert.equal(parseYouTubeCaptionXml(xml), 'Line & 1\nLine 2');
+
+  const tracks = [
+    { languageCode: 'en', kind: 'asr', baseUrl: 'https://example.com/en-asr' },
+    { languageCode: 'vi', kind: 'asr', baseUrl: 'https://example.com/vi-asr' },
+    { languageCode: 'vi', baseUrl: 'https://example.com/vi-manual' },
+  ];
+  assert.equal(pickCaptionTrack(tracks, 'vi')?.baseUrl, 'https://example.com/vi-manual');
+});
+
+test('subtitle url validation blocks private and internal network targets', async () => {
+  await assert.rejects(() => assertSafePublicHttpUrl('http://127.0.0.1:3001/health'), /nội bộ/);
+  await assert.rejects(() => assertSafePublicHttpUrl('http://postgres:5432/'), /nội bộ/);
+  await assert.rejects(() => assertSafePublicHttpUrl('http://169.254.169.254/latest'), /nội bộ/);
+  await assert.rejects(
+    () => assertSafePublicHttpUrl('https://sub.example.com/test.vtt', async () => [{ address: '10.0.0.5', family: 4 }]),
+    /nội bộ/,
+  );
+  const safe = await assertSafePublicHttpUrl('https://example.com/sub.vtt', async () => [{ address: '93.184.216.34', family: 4 }]);
+  assert.equal(safe.href, 'https://example.com/sub.vtt');
+});
+
+test('video validation and gemini prompt support youtube links without local transcript', () => {
+  const ytVideo = validateVideoInput({
+    title: 'YouTube Clip',
+    video_url: 'https://youtu.be/9hE5-98ZeCg?t=5',
+  });
+  assert.equal(ytVideo.video_url, 'https://www.youtube.com/watch?v=9hE5-98ZeCg');
+  assert.equal(ytVideo.transcript, '');
+
+  assert.throws(
+    () => validateVideoInput({ title: 'Non-YouTube link', video_url: 'https://example.com/sub.vtt' }),
+    /Transcript is required/,
+  );
+
+  const prompt = buildSummaryPrompt({
+    title: 'YouTube Clip',
+    videoUrl: 'https://www.youtube.com/watch?v=9hE5-98ZeCg',
+    options: { language: 'vi', style: 'short' },
+  });
+  assert.equal(Array.isArray(prompt.input), true);
+  assert.deepEqual(prompt.input[1], { type: 'video', uri: 'https://www.youtube.com/watch?v=9hE5-98ZeCg' });
 });
