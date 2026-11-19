@@ -1,149 +1,307 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyStatus, validateOptions, validateFault, validateVideoInput, messageFor } from '../src/domain.js';
-import { buildSummaryPrompt, extractErrorStatus, summarizeWithGemini } from '../src/gemini.js';
+import test from 'node:test';
 import {
-  extractYouTubeId,
-  canonicalYouTubeUrl,
-  cleanSubtitleText,
-  parseYouTubeCaptionJson3,
-  parseYouTubeCaptionXml,
-  pickCaptionTrack,
-  assertSafePublicHttpUrl,
-} from '../src/transcript.js';
+  assertValidFixedTargetUrl,
+  isLoopbackAddress,
+  requireLoopbackAdmin,
+  requireWebhookSecret,
+} from '../src/config.js';
+import { sha256Hex, signWebhook, verifyWebhookSignature } from '../src/crypto.js';
+import {
+  buildSummaryCompletedPayload,
+  classifyDeliveryResponse,
+  computeRetryDelayMs,
+  deriveEventId,
+  parseAndValidateEvent,
+  parseRetryAfterMs,
+} from '../src/protocol.js';
 
-test('retry classification uses status/type, never error text', () => {
-  for (const status of [408, 429, 500, 503, 504]) assert.equal(classifyStatus(status).transient, true);
-  for (const status of [400, 401, 403, 404]) assert.equal(classifyStatus(status).transient, false);
-});
+const TEST_SECRET = 'unit-test-only-ephemeral-secret';
 
-test('lab-only fault injection cannot leak into normal API mode', () => {
-  assert.throws(() => validateOptions({ pause_at: 'before_llm_call' }), /Unsupported/);
-  assert.throws(() => validateOptions({ mock: { status: 429 } }), /Unsupported/);
-  assert.deepEqual(validateOptions({ language: 'vi', style: 'short' }), { language: 'vi', style: 'short' });
-  assert.throws(() => validateFault({ delay_ms: -1 }), /Invalid/);
-  assert.throws(() => validateFault({ status: 201 }), /Invalid/);
-  assert.throws(() => validateOptions({ pause_at: 'wrong' }, true), /Invalid/);
-});
+test('HMAC-SHA256 signs exact UTF8(timestamp + ".") || raw_body_bytes and verifies constant-time', () => {
+  const rawBody = Buffer.from('{"event_id":"E42","type":"summary.completed","data":{"version":1}}', 'utf8');
+  const nowSec = 1794988800;
+  const sig = signWebhook({ secret: TEST_SECRET, timestamp: nowSec, rawBody });
 
-test('message envelope keeps identity and metadata without the video payload', () => {
-  const job = { job_id: 'j', message_id: 'm', video_id: 'V1', version: 2, correlation_id: 'c', created_at: '2026-11-15T00:00:00Z', options: { language: 'vi' }, transcript: 'must stay out' };
-  const message = messageFor(job);
-  assert.equal(message.message_id, 'm');
-  assert.equal(message.version, 2);
-  assert.equal(message.correlation_id, 'c');
-  assert.equal(message.created_at, '2026-11-15T00:00:00.000Z');
-  assert.equal('transcript' in message, false);
-});
+  assert.match(sig, /^[0-9a-f]{64}$/);
+  assert.deepEqual(
+    verifyWebhookSignature({
+      secret: TEST_SECRET,
+      timestampHeader: String(nowSec),
+      signatureHeader: sig,
+      rawBody,
+      nowSec,
+    }),
+    { ok: true, timestamp: nowSec },
+  );
 
-test('video input validation supports dynamic transcripts and no-audio videos', () => {
-  const valid = validateVideoInput({ video_id: 'V-DEMO', title: 'Demo Video', transcript: 'Xin chao cac ban' });
-  assert.deepEqual(valid, { video_id: 'V-DEMO', title: 'Demo Video', transcript: 'Xin chao cac ban', has_audio: true });
-
-  const autoId = validateVideoInput({ title: 'No Audio Video', has_audio: false });
-  assert.match(autoId.video_id, /^V-[0-9a-f]{8}$/);
-  assert.equal(autoId.has_audio, false);
-
-  assert.throws(() => validateVideoInput({ title: 'Missing transcript' }), /Transcript is required/);
-  assert.throws(() => validateVideoInput({ video_id: 'bad id!', title: 'X', transcript: 'abc' }), /Invalid video_id/);
-});
-
-test('gemini prompt builder includes language, style, title and transcript', () => {
-  const { systemInstruction, input } = buildSummaryPrompt({
-    title: 'Docker Intro',
-    transcript: 'Containers package code and dependencies.',
-    options: { language: 'en', style: 'detailed' },
+  // Re-serializing JSON with extra whitespace changes raw bytes and MUST fail verification.
+  const reformattedBody = Buffer.from(
+    '{ "event_id": "E42", "type": "summary.completed", "data": { "version": 1 } }',
+    'utf8',
+  );
+  const res = verifyWebhookSignature({
+    secret: TEST_SECRET,
+    timestampHeader: String(nowSec),
+    signatureHeader: sig,
+    rawBody: reformattedBody,
+    nowSec,
   });
-  assert.match(systemInstruction, /summarizer/i);
-  assert.match(input, /Output language: English/);
-  assert.match(input, /Summary style: detailed/);
-  assert.match(input, /Video title: Docker Intro/);
-  assert.match(input, /Containers package code and dependencies\./);
+  assert.equal(res.ok, false);
+  assert.equal(res.reason, 'SIGNATURE_MISMATCH');
 });
 
-test('gemini error mapping extracts HTTP status codes and timeouts accurately', async () => {
-  assert.equal(extractErrorStatus({ status: 429 }), 429);
-  assert.equal(extractErrorStatus({ statusCode: 400 }), 400);
-  assert.equal(extractErrorStatus({ name: 'RequestTimeoutError' }), 504);
-  assert.equal(extractErrorStatus(new Error('network down')), 503);
+test('timestamp window rejects both too-old and too-far-future timestamps (> 300s)', () => {
+  const rawBody = Buffer.from('{"a":1}', 'utf8');
+  const nowSec = 1794988800;
 
-  await assert.rejects(
-    () => summarizeWithGemini({ transcript: 'hello', apiKey: '', model: 'gemini-3.5-flash-lite' }),
-    err => err.status === 401 && /GEMINI_API_KEY/.test(err.message),
+  for (const delta of [-300, 0, 300]) {
+    const ts = nowSec + delta;
+    const sig = signWebhook({ secret: TEST_SECRET, timestamp: ts, rawBody });
+    assert.equal(
+      verifyWebhookSignature({
+        secret: TEST_SECRET,
+        timestampHeader: String(ts),
+        signatureHeader: sig,
+        rawBody,
+        nowSec,
+        windowSec: 300,
+      }).ok,
+      true,
+    );
+  }
+
+  for (const delta of [-301, 301, -999, 999]) {
+    const ts = nowSec + delta;
+    const sig = signWebhook({ secret: TEST_SECRET, timestamp: ts, rawBody });
+    const result = verifyWebhookSignature({
+      secret: TEST_SECRET,
+      timestampHeader: String(ts),
+      signatureHeader: sig,
+      rawBody,
+      nowSec,
+      windowSec: 300,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, 'TIMESTAMP_OUT_OF_WINDOW');
+  }
+
+  for (const badTs of [undefined, '', '-10', '1794988800.5', 'not-a-number']) {
+    const result = verifyWebhookSignature({
+      secret: TEST_SECRET,
+      timestampHeader: badTs,
+      signatureHeader: 'a'.repeat(64),
+      rawBody,
+      nowSec,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, 'INVALID_TIMESTAMP');
+  }
+});
+
+test('signature format and wrong secret are rejected before JSON parse', () => {
+  const notEvenJson = Buffer.from('<<<not-json>>>', 'utf8');
+  const nowSec = 1794988800;
+  const sigWithOtherSecret = signWebhook({ secret: 'different-secret', timestamp: nowSec, rawBody: notEvenJson });
+
+  assert.equal(
+    verifyWebhookSignature({
+      secret: TEST_SECRET,
+      timestampHeader: String(nowSec),
+      signatureHeader: sigWithOtherSecret,
+      rawBody: notEvenJson,
+      nowSec,
+    }).reason,
+    'SIGNATURE_MISMATCH',
+  );
+
+  assert.equal(
+    verifyWebhookSignature({
+      secret: TEST_SECRET,
+      timestampHeader: String(nowSec),
+      signatureHeader: 'short',
+      rawBody: notEvenJson,
+      nowSec,
+    }).reason,
+    'INVALID_SIGNATURE_FORMAT',
   );
 });
 
-test('youtube url extraction, subtitle cleanup and track selection work reliably', () => {
-  assert.equal(extractYouTubeId('https://www.youtube.com/watch?v=9hE5-98ZeCg&t=10s'), '9hE5-98ZeCg');
-  assert.equal(extractYouTubeId('https://youtu.be/9hE5-98ZeCg?si=abc'), '9hE5-98ZeCg');
-  assert.equal(extractYouTubeId('https://youtube.com/shorts/9hE5-98ZeCg'), '9hE5-98ZeCg');
-  assert.equal(extractYouTubeId('https://example.com/watch?v=9hE5-98ZeCg'), null);
-  assert.equal(canonicalYouTubeUrl('9hE5-98ZeCg'), 'https://www.youtube.com/watch?v=9hE5-98ZeCg');
+test('event payload builder and strict schema validator enforce required fields and positive integer version', () => {
+  const eventId = deriveEventId('J42');
+  assert.equal(eventId, 'E42');
+  assert.equal(deriveEventId('J43'), 'E43');
 
-  const vtt = [
-    'WEBVTT',
-    'Kind: captions',
-    'Language: vi',
-    '',
-    '00:00:01.000 --> 00:00:03.000',
-    '<c>Xin chào &amp; cảm ơn</c>',
-    '',
-    '00:00:03.000 --> 00:00:05.000',
-    'Xin chào &amp; cảm ơn',
-    'Dòng thứ hai',
-  ].join('\n');
-  assert.equal(cleanSubtitleText(vtt), 'Xin chào & cảm ơn\nDòng thứ hai');
+  const payload = buildSummaryCompletedPayload(
+    { job_id: 'J42', video_id: 'V7', version: 1, summary: 'Fixture summary' },
+    eventId,
+    '2026-11-18T08:00:00.000Z',
+  );
+  const raw = Buffer.from(JSON.stringify(payload), 'utf8');
+  assert.equal(sha256Hex(raw).length, 64);
 
-  const json3 = parseYouTubeCaptionJson3({
-    events: [
-      { segs: [{ utf8: 'Hello ' }, { utf8: 'world' }] },
-      { segs: [{ utf8: 'Hello world' }] },
-      { segs: [{ utf8: 'Second line' }] },
-    ],
-  });
-  assert.equal(json3, 'Hello world\nSecond line');
+  const ok = parseAndValidateEvent(raw);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.payload.event_id, 'E42');
+  assert.equal(ok.payload.data.version, 1);
 
-  const xml = '<transcript><text start="0" dur="2">Line &amp; 1</text><text start="2" dur="2">Line 2</text></transcript>';
-  assert.equal(parseYouTubeCaptionXml(xml), 'Line & 1\nLine 2');
-
-  const tracks = [
-    { languageCode: 'en', kind: 'asr', baseUrl: 'https://example.com/en-asr' },
-    { languageCode: 'vi', kind: 'asr', baseUrl: 'https://example.com/vi-asr' },
-    { languageCode: 'vi', baseUrl: 'https://example.com/vi-manual' },
-  ];
-  assert.equal(pickCaptionTrack(tracks, 'vi')?.baseUrl, 'https://example.com/vi-manual');
+  assert.equal(parseAndValidateEvent(Buffer.from('not json')).ok, false);
+  assert.equal(parseAndValidateEvent(Buffer.from(JSON.stringify({ ...payload, type: 'other' }))).ok, false);
+  assert.equal(parseAndValidateEvent(Buffer.from(JSON.stringify({ ...payload, schema_version: 2 }))).ok, false);
+  assert.equal(parseAndValidateEvent(Buffer.from(JSON.stringify({ ...payload, occurred_at: 'bad-date' }))).ok, false);
+  assert.equal(
+    parseAndValidateEvent(Buffer.from(JSON.stringify({ ...payload, data: { ...payload.data, version: 0 } }))).ok,
+    false,
+  );
+  assert.equal(
+    parseAndValidateEvent(Buffer.from(JSON.stringify({ ...payload, data: { ...payload.data, version: 1.5 } }))).ok,
+    false,
+  );
+  assert.equal(
+    parseAndValidateEvent(Buffer.from(JSON.stringify({ ...payload, data: { ...payload.data, summary: '' } }))).ok,
+    false,
+  );
 });
 
-test('subtitle url validation blocks private and internal network targets', async () => {
-  await assert.rejects(() => assertSafePublicHttpUrl('http://127.0.0.1:3001/health'), /nội bộ/);
-  await assert.rejects(() => assertSafePublicHttpUrl('http://postgres:5432/'), /nội bộ/);
-  await assert.rejects(() => assertSafePublicHttpUrl('http://169.254.169.254/latest'), /nội bộ/);
-  await assert.rejects(
-    () => assertSafePublicHttpUrl('https://sub.example.com/test.vtt', async () => [{ address: '10.0.0.5', family: 4 }]),
-    /nội bộ/,
-  );
-  const safe = await assertSafePublicHttpUrl('https://example.com/sub.vtt', async () => [{ address: '93.184.216.34', family: 4 }]);
-  assert.equal(safe.href, 'https://example.com/sub.vtt');
+test('relay response classifier maps 2xx, 429/5xx, and 3xx/other-4xx strictly per Block 9 contract', () => {
+  for (const status of [200, 201, 202, 204]) {
+    const res = classifyDeliveryResponse({ status });
+    assert.equal(res.outcome, 'ACKNOWLEDGED');
+    assert.equal(res.nextOutboxStatus, 'DELIVERED');
+  }
+
+  for (const status of [500, 502, 503, 504]) {
+    const res = classifyDeliveryResponse({ status });
+    assert.equal(res.outcome, 'RETRYABLE');
+    assert.equal(res.nextOutboxStatus, 'PENDING');
+  }
+
+  const rateLimited = classifyDeliveryResponse({ status: 429, retryAfterHeader: '20' });
+  assert.equal(rateLimited.outcome, 'RETRYABLE');
+  assert.equal(rateLimited.retryAfterMs, 20000);
+
+  for (const status of [301, 302, 307, 400, 401, 403, 404, 409, 422]) {
+    const res = classifyDeliveryResponse({ status });
+    assert.equal(res.outcome, 'REJECTED');
+    assert.equal(res.nextOutboxStatus, 'DEAD');
+  }
 });
 
-test('video validation and gemini prompt support youtube links without local transcript', () => {
-  const ytVideo = validateVideoInput({
-    title: 'YouTube Clip',
-    video_url: 'https://youtu.be/9hE5-98ZeCg?t=5',
-  });
-  assert.equal(ytVideo.video_url, 'https://www.youtube.com/watch?v=9hE5-98ZeCg');
-  assert.equal(ytVideo.transcript, '');
+test('Retry-After parser and backoff policy respect 1/3/9s schedule, 4-attempt cap, and Retry-After floor', () => {
+  const nowMs = Date.parse('2026-11-19T00:00:00.000Z');
+  assert.equal(parseRetryAfterMs('20', nowMs), 20000);
+  assert.equal(parseRetryAfterMs('Thu, 19 Nov 2026 00:00:15 GMT', nowMs), 15000);
+  assert.equal(parseRetryAfterMs('invalid', nowMs), null);
+  assert.equal(parseRetryAfterMs('-5', nowMs), null);
 
-  assert.throws(
-    () => validateVideoInput({ title: 'Non-YouTube link', video_url: 'https://example.com/sub.vtt' }),
-    /Transcript is required/,
+  assert.equal(computeRetryDelayMs({ attemptInRound: 1 }), 1000);
+  assert.equal(computeRetryDelayMs({ attemptInRound: 2 }), 3000);
+  assert.equal(computeRetryDelayMs({ attemptInRound: 3 }), 9000);
+  assert.equal(computeRetryDelayMs({ attemptInRound: 4 }), null);
+
+  // 429 with Retry-After: 20s must wait at least 20s (greater than 1s backoff).
+  assert.equal(computeRetryDelayMs({ attemptInRound: 1, retryAfterMs: 20000 }), 20000);
+  // 429 with Retry-After: 2s on attempt 3 must still wait at least 9s lab backoff.
+  assert.equal(computeRetryDelayMs({ attemptInRound: 3, retryAfterMs: 2000 }), 9000);
+});
+
+test('fixed target URL validation restricts endpoint to loopback / receiver-api and requires webhook secret', () => {
+  assert.equal(
+    assertValidFixedTargetUrl('http://127.0.0.1:4100/webhooks/summaries'),
+    'http://127.0.0.1:4100/webhooks/summaries',
+  );
+  assert.equal(
+    assertValidFixedTargetUrl('http://localhost:4100/webhooks/summaries'),
+    'http://localhost:4100/webhooks/summaries',
+  );
+  assert.equal(
+    assertValidFixedTargetUrl('http://receiver-api:4100/webhooks/summaries'),
+    'http://receiver-api:4100/webhooks/summaries',
   );
 
-  const prompt = buildSummaryPrompt({
-    title: 'YouTube Clip',
-    videoUrl: 'https://www.youtube.com/watch?v=9hE5-98ZeCg',
-    options: { language: 'vi', style: 'short' },
+  assert.throws(() => assertValidFixedTargetUrl('http://169.254.169.254/latest'), /loopback/);
+  assert.throws(() => assertValidFixedTargetUrl('https://evil.example.com/hook'), /loopback/);
+  assert.throws(() => assertValidFixedTargetUrl('ftp://127.0.0.1/hook'), /protocol/);
+  assert.throws(() => assertValidFixedTargetUrl('not-a-url'), /Invalid/);
+  assert.throws(() => requireWebhookSecret({ webhookSecret: '' }), /WEBHOOK_SECRET is required/);
+});
+
+test('HMAC-SHA256 handles multi-byte UTF-8 Vietnamese payloads byte-accurately', () => {
+  const payload = JSON.stringify({
+    event_id: 'E42',
+    type: 'summary.completed',
+    schema_version: 1,
+    occurred_at: '2026-11-19T03:00:00.000Z',
+    data: {
+      job_id: 'J42',
+      video_id: 'V7',
+      version: 1,
+      summary: 'Nội dung tóm tắt giả định tiếng Việt có dấu đầy đủ ă â đ ê ô ơ ư.',
+    },
   });
-  assert.equal(Array.isArray(prompt.input), true);
-  assert.deepEqual(prompt.input[1], { type: 'video', uri: 'https://www.youtube.com/watch?v=9hE5-98ZeCg' });
+  const rawBuf = Buffer.from(payload, 'utf8');
+  assert.ok(rawBuf.length > payload.length, 'UTF-8 byte length should exceed JS string length');
+  const nowSec = 1794988800;
+  const sig = signWebhook({ secret: TEST_SECRET, timestamp: nowSec, rawBody: rawBuf });
+  assert.equal(
+    verifyWebhookSignature({
+      secret: TEST_SECRET,
+      timestampHeader: String(nowSec),
+      signatureHeader: sig,
+      rawBody: rawBuf,
+      nowSec,
+    }).ok,
+    true,
+  );
+});
+
+test('requireLoopbackAdmin enforces loopback remoteAddress and ignores spoofed X-Forwarded-For', () => {
+  assert.equal(isLoopbackAddress('127.0.0.1'), true);
+  assert.equal(isLoopbackAddress('127.0.0.2'), true);
+  assert.equal(isLoopbackAddress('::1'), true);
+  assert.equal(isLoopbackAddress('::ffff:127.0.0.1'), true);
+  assert.equal(isLoopbackAddress('192.168.1.10'), false);
+  assert.equal(isLoopbackAddress('::ffff:172.18.0.1'), false);
+  assert.equal(isLoopbackAddress('203.0.113.9'), false);
+  assert.equal(isLoopbackAddress(''), false);
+
+  const runGuard = (remoteAddress, cfg = { allowDockerBridgeAdmin: false }) => {
+    const mw = requireLoopbackAdmin(cfg);
+    let nextCalled = false;
+    let statusCode = null;
+    let jsonBody = null;
+    const req = {
+      socket: { remoteAddress },
+      headers: { 'x-forwarded-for': '127.0.0.1' },
+    };
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json(body) {
+        jsonBody = body;
+        return this;
+      },
+    };
+    mw(req, res, () => {
+      nextCalled = true;
+    });
+    return { nextCalled, statusCode, jsonBody };
+  };
+
+  for (const addr of ['127.0.0.1', '::1', '::ffff:127.0.0.1']) {
+    assert.deepEqual(runGuard(addr), { nextCalled: true, statusCode: null, jsonBody: null });
+  }
+
+  for (const addr of ['192.168.1.10', '::ffff:172.18.0.1', '10.0.0.5', '203.0.113.9', '']) {
+    const out = runGuard(addr);
+    assert.equal(out.nextCalled, false);
+    assert.equal(out.statusCode, 403);
+    assert.equal(out.jsonBody?.error, 'LOOPBACK_ONLY');
+  }
+
+  // Only when explicitly enabled in compose.yaml (where host port is pinned to 127.0.0.1)
+  assert.equal(runGuard('::ffff:172.18.0.1', { allowDockerBridgeAdmin: true }).nextCalled, true);
+  assert.equal(runGuard('203.0.113.9', { allowDockerBridgeAdmin: true }).statusCode, 403);
 });

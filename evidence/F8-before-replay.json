@@ -1,0 +1,97 @@
+{
+  "label": "F8-before-replay",
+  "captured_at": "2026-11-19T15:45:19.631Z",
+  "sender_db": {
+    "jobs": [
+      {
+        "job_id": "J42",
+        "video_id": "V7",
+        "version": 1,
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+        "status": "DONE",
+        "created_at": "2026-11-19T15:45:05.232Z",
+        "completed_at": "2026-11-19T15:45:06.294Z"
+      },
+      {
+        "job_id": "J43",
+        "video_id": "V7",
+        "version": 2,
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 2, job J43).",
+        "status": "READY",
+        "created_at": "2026-11-19T15:45:05.232Z",
+        "completed_at": null
+      }
+    ],
+    "outbox": [
+      {
+        "event_id": "E42",
+        "job_id": "J42",
+        "event_type": "summary.completed",
+        "schema_version": 1,
+        "raw_body": "{\"event_id\":\"E42\",\"type\":\"summary.completed\",\"schema_version\":1,\"occurred_at\":\"2026-11-19T15:45:06.294Z\",\"data\":{\"job_id\":\"J42\",\"video_id\":\"V7\",\"version\":1,\"summary\":\"Nội dung tóm tắt giả định của video V7 (version 1, job J42).\"}}",
+        "status": "DEAD",
+        "replay_round": 1,
+        "next_attempt_at": null,
+        "created_at": "2026-11-19T15:45:06.296Z",
+        "delivered_at": null,
+        "dead_at": "2026-11-19T15:45:19.514Z",
+        "last_error": "HTTP_503"
+      }
+    ],
+    "delivery_attempts": [
+      {
+        "attempt_seq": "1",
+        "attempt_id": "A1",
+        "event_id": "E42",
+        "round": 1,
+        "attempt_in_round": 1,
+        "started_at": "2026-11-19T15:45:06.330Z",
+        "finished_at": "2026-11-19T15:45:06.351Z",
+        "http_status": 503,
+        "outcome": "RETRYABLE",
+        "error_detail": "HTTP_503"
+      },
+      {
+        "attempt_seq": "2",
+        "attempt_id": "A2",
+        "event_id": "E42",
+        "round": 1,
+        "attempt_in_round": 2,
+        "started_at": "2026-11-19T15:45:07.401Z",
+        "finished_at": "2026-11-19T15:45:07.417Z",
+        "http_status": 503,
+        "outcome": "RETRYABLE",
+        "error_detail": "HTTP_503"
+      },
+      {
+        "attempt_seq": "3",
+        "attempt_id": "A3",
+        "event_id": "E42",
+        "round": 1,
+        "attempt_in_round": 3,
+        "started_at": "2026-11-19T15:45:10.443Z",
+        "finished_at": "2026-11-19T15:45:10.452Z",
+        "http_status": 503,
+        "outcome": "RETRYABLE",
+        "error_detail": "HTTP_503"
+      },
+      {
+        "attempt_seq": "4",
+        "attempt_id": "A4",
+        "event_id": "E42",
+        "round": 1,
+        "attempt_in_round": 4,
+        "started_at": "2026-11-19T15:45:19.504Z",
+        "finished_at": "2026-11-19T15:45:19.514Z",
+        "http_status": 503,
+        "outcome": "RETRYABLE",
+        "error_detail": "HTTP_503"
+      }
+    ],
+    "replay_events": []
+  },
+  "receiver_db": {
+    "inbox": [],
+    "video_summaries": []
+  }
+}

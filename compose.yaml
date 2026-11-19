@@ -1,110 +1,155 @@
-name: hcmus-web-block8
-x-app: &app
+name: hcmus-web-block9
+
+x-base: &base
   build: .
   init: true
-  environment: &env
-    DATABASE_URL: postgres://lab:lab@postgres:5432/broker_lab
-    AMQP_URL: amqp://lab:lab@rabbitmq:5672
-    MOCK_URL: http://mock-llm:3001
-    RABBIT_MANAGEMENT_URL: http://rabbitmq:15672
-    RABBIT_USER: lab
-    RABBIT_PASSWORD: lab
-    LAB_MODE: "true"
-    APP_VERSION: ${APP_VERSION:-V3}
-    GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-    GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
-    LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
-    LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS:-15000}
-  depends_on:
-    postgres: { condition: service_healthy }
-    rabbitmq: { condition: service_healthy }
-    mock-llm: { condition: service_healthy }
+
 services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: broker_lab
+      POSTGRES_DB: postgres
       POSTGRES_USER: lab
       POSTGRES_PASSWORD: lab
-    ports: ["127.0.0.1:${PG_PORT:-5438}:5432"]
+    ports:
+      - "127.0.0.1:${PG_PORT:-5439}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./db/001-init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+      - pgdata_block9:/var/lib/postgresql/data
+      - ./db/init/001-create-databases.sql:/docker-entrypoint-initdb.d/001-create-databases.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lab -d broker_lab"]
+      test: ["CMD-SHELL", "pg_isready -U lab -d postgres"]
       interval: 2s
       timeout: 3s
       retries: 30
-  rabbitmq:
-    image: rabbitmq:4.2-management-alpine
-    hostname: rabbitmq
+
+  db-migrate:
+    <<: *base
+    command: ["node", "scripts/migrate.js", "--seed"]
     environment:
-      RABBITMQ_DEFAULT_USER: lab
-      RABBITMQ_DEFAULT_PASS: lab
-    ports:
-      - "127.0.0.1:${AMQP_PORT:-5678}:5672"
-      - "127.0.0.1:${RABBIT_ADMIN_PORT:-15678}:15672"
-    volumes: ["rabbitdata:/var/lib/rabbitmq"]
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 3s
-      timeout: 5s
-      retries: 40
-  mock-llm:
-    <<: *app
-    command: ["node", "src/mock-llm.js"]
+      PG_ADMIN_DATABASE_URL: postgres://lab:lab@postgres:5432/postgres
+      SENDER_DATABASE_URL: postgres://lab:lab@postgres:5432/sender_db
+      RECEIVER_DATABASE_URL: postgres://lab:lab@postgres:5432/receiver_db
     depends_on:
-      postgres: { condition: service_healthy }
-    ports: ["127.0.0.1:${MOCK_PORT:-3001}:3001"]
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  sender-api:
+    <<: *base
+    command: ["node", "src/sender-api.js"]
+    environment:
+      BIND_HOST: "0.0.0.0"
+      SENDER_PORT: "4000"
+      SENDER_DATABASE_URL: postgres://lab:lab@postgres:5432/sender_db
+      RELAY_HEALTH_URL: http://relay:4002/health
+      RECEIVER_PUBLIC_URL: http://127.0.0.1:${RECEIVER_PORT:-4100}
+      LAB_MODE: ${LAB_MODE:-true}
+      # Host port below is pinned to 127.0.0.1; allow Docker bridge gateway inside container
+      ALLOW_DOCKER_BRIDGE_ADMIN: "true"
+      MARKER: ${SENDER_MARKER:-}
+    ports:
+      - "127.0.0.1:${SENDER_PORT:-4000}:4000"
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
-      interval: 3s
+      interval: 2s
       timeout: 3s
       retries: 30
-  api:
-    <<: *app
-    ports: ["127.0.0.1:${API_PORT:-3000}:3000"]
+
+  relay:
+    <<: *base
+    command: ["node", "src/relay.js"]
+    environment:
+      BIND_HOST: "0.0.0.0"
+      RELAY_HEALTH_PORT: "4002"
+      SENDER_DATABASE_URL: postgres://lab:lab@postgres:5432/sender_db
+      WEBHOOK_TARGET_URL: http://receiver-api:4100/webhooks/summaries
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?Set WEBHOOK_SECRET in .env}
+      WEBHOOK_TIMEOUT_MS: ${WEBHOOK_TIMEOUT_MS:-2000}
+      RELAY_POLL_INTERVAL_MS: ${RELAY_POLL_INTERVAL_MS:-100}
+      LAB_MODE: ${LAB_MODE:-true}
+      MARKER: ${RELAY_MARKER:-}
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      receiver-api:
+        condition: service_healthy
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:4002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
-      interval: 3s
+      interval: 2s
       timeout: 3s
       retries: 30
-  worker-1:
-    <<: *app
-    command: ["node", "src/worker.js"]
+
+  receiver-api:
+    <<: *base
+    command: ["node", "src/receiver-api.js"]
     environment:
-      <<: *env
-      WORKER_ID: worker-1
-    healthcheck: &worker-health
+      BIND_HOST: "0.0.0.0"
+      RECEIVER_PORT: "4100"
+      RECEIVER_DATABASE_URL: postgres://lab:lab@postgres:5432/receiver_db
+      WORKER_HEALTH_URL: http://receiver-worker:4102/health
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?Set WEBHOOK_SECRET in .env}
+      WEBHOOK_SOURCE: ${WEBHOOK_SOURCE:-sender-lab}
+      WEBHOOK_TIMESTAMP_WINDOW_SEC: ${WEBHOOK_TIMESTAMP_WINDOW_SEC:-300}
+      LAB_MODE: ${LAB_MODE:-true}
+      # Host port below is pinned to 127.0.0.1; allow Docker bridge gateway inside container
+      ALLOW_DOCKER_BRIDGE_ADMIN: "true"
+      MARKER: ${RECEIVER_MARKER:-}
+    ports:
+      - "127.0.0.1:${RECEIVER_PORT:-4100}:4100"
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://127.0.0.1:4100/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
-      interval: 3s
+      interval: 2s
       timeout: 3s
       retries: 30
-  worker-2:
-    <<: *app
-    command: ["node", "src/worker.js"]
+
+  receiver-worker:
+    <<: *base
+    command: ["node", "src/receiver-worker.js"]
     environment:
-      <<: *env
-      WORKER_ID: worker-2
-    healthcheck: *worker-health
+      BIND_HOST: "0.0.0.0"
+      WORKER_HEALTH_PORT: "4102"
+      RECEIVER_DATABASE_URL: postgres://lab:lab@postgres:5432/receiver_db
+      WORKER_POLL_INTERVAL_MS: ${WORKER_POLL_INTERVAL_MS:-100}
+      LAB_MODE: ${LAB_MODE:-true}
+      MARKER: ${WORKER_MARKER:-}
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4102/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
 volumes:
-  pgdata:
-  rabbitdata:
+  pgdata_block9:

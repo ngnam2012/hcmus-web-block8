@@ -4,6 +4,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 COPY src ./src
 COPY public ./public
+COPY db ./db
 COPY scripts ./scripts
 COPY test ./test
-CMD ["node", "src/api.js"]
+CMD ["node", "src/sender-api.js"]

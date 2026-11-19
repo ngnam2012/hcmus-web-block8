@@ -1,0 +1,48 @@
+{
+  "label": "F2-after-kill",
+  "captured_at": "2026-11-19T15:44:56.967Z",
+  "sender_db": {
+    "jobs": [
+      {
+        "job_id": "J42",
+        "video_id": "V7",
+        "version": 1,
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+        "status": "DONE",
+        "created_at": "2026-11-19T15:44:56.108Z",
+        "completed_at": "2026-11-19T15:44:56.949Z"
+      },
+      {
+        "job_id": "J43",
+        "video_id": "V7",
+        "version": 2,
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 2, job J43).",
+        "status": "READY",
+        "created_at": "2026-11-19T15:44:56.108Z",
+        "completed_at": null
+      }
+    ],
+    "outbox": [
+      {
+        "event_id": "E42",
+        "job_id": "J42",
+        "event_type": "summary.completed",
+        "schema_version": 1,
+        "raw_body": "{\"event_id\":\"E42\",\"type\":\"summary.completed\",\"schema_version\":1,\"occurred_at\":\"2026-11-19T15:44:56.949Z\",\"data\":{\"job_id\":\"J42\",\"video_id\":\"V7\",\"version\":1,\"summary\":\"Nội dung tóm tắt giả định của video V7 (version 1, job J42).\"}}",
+        "status": "PENDING",
+        "replay_round": 1,
+        "next_attempt_at": "2026-11-19T15:44:56.952Z",
+        "created_at": "2026-11-19T15:44:56.952Z",
+        "delivered_at": null,
+        "dead_at": null,
+        "last_error": null
+      }
+    ],
+    "delivery_attempts": [],
+    "replay_events": []
+  },
+  "receiver_db": {
+    "inbox": [],
+    "video_summaries": []
+  }
+}

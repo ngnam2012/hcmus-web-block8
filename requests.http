@@ -1,68 +1,51 @@
-@api = http://127.0.0.1:3000
-@mock = http://127.0.0.1:3001
-@job_id = REPLACE_FROM_POST_RESPONSE
-@message_id = REPLACE_FROM_POST_RESPONSE
+@sender = http://127.0.0.1:4000
+@receiver = http://127.0.0.1:4100
 
-### Health
-GET {{api}}/health
+### Sender health
+GET {{sender}}/health
 
-### List videos
-GET {{api}}/videos
+### Receiver health
+GET {{receiver}}/health
 
-### Create dynamic video transcript
-POST {{api}}/videos
+### List fixture jobs (J42, J43)
+GET {{sender}}/jobs
+
+### Complete J42 (V7, version 1 -> E42)
+POST {{sender}}/jobs/J42/complete
+
+### Complete J43 (V7, version 2 -> E43)
+POST {{sender}}/jobs/J43/complete
+
+### Inspect Sender outbox + delivery attempts for E42
+GET {{sender}}/events/E42
+
+### Replay DEAD event E42 (returns 409 if not DEAD)
+POST {{sender}}/events/E42/replay
+
+### Inspect Receiver inbox for E42
+GET {{receiver}}/inbox/E42
+
+### Get current video summary for V7 (returns 404 before worker processes)
+GET {{receiver}}/videos/V7/summary
+
+### [LAB_MODE] Arm receiver 503 fault before inbox save (F8)
+PUT {{receiver}}/_lab/fault
 Content-Type: application/json
 
-{"video_id":"V-AI","title":"Gioi thieu Message Broker","transcript":"Message broker giup tach API khoi tac vu xu ly nang bang hang doi. API chi luu job va gui message persistent, cho publisher confirm roi tra 202 Accepted ngay cho client."}
+{
+  "fail_status": 503
+}
 
-### H0
-POST {{api}}/summaries
-Content-Type: application/json
-X-Correlation-ID: manual-h0
-
-{"video_id":"V1","options":{"language":"vi","style":"short"}}
-
-### Status
-GET {{api}}/summaries/{{job_id}}
-
-### Attempts
-GET {{api}}/summaries/{{job_id}}/attempts
-
-### Current summary
-GET {{api}}/videos/V1/summary
-
-### F2
-POST {{api}}/summaries
+### [LAB_MODE] Arm receiver one-shot socket drop after inbox commit (F4)
+PUT {{receiver}}/_lab/fault
 Content-Type: application/json
 
-{"video_id":"V1","options":{"mock":{"status":429,"fail_first":2,"delay_ms":100}}}
+{
+  "drop_after_commit_once": true
+}
 
-### F3: no audio
-POST {{api}}/summaries
-Content-Type: application/json
-
-{"video_id":"V9"}
-
-### F4: persistent failure
-POST {{api}}/summaries
-Content-Type: application/json
-
-{"video_id":"V1","options":{"mock":{"status":503,"delay_ms":100}}}
-
-### Clear fault, then replay
-PUT {{mock}}/faults/{{job_id}}
+### [LAB_MODE] Clear all receiver faults
+PUT {{receiver}}/_lab/fault
 Content-Type: application/json
 
 {}
-
-### Replay same message_id
-POST {{api}}/dlq/{{message_id}}/replay
-
-### Durable mock call count
-GET {{mock}}/calls/{{job_id}}
-
-### F8: wait for CHECKPOINT_PAUSED, then docker compose kill -s SIGKILL worker-1
-POST {{api}}/summaries
-Content-Type: application/json
-
-{"video_id":"V1","options":{"pause_at":"after_llm_before_commit","mock":{"delay_ms":100}}}

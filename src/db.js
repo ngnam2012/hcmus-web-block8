@@ -1,13 +1,26 @@
 import pg from 'pg';
 import { config } from './config.js';
-export const pool = new pg.Pool({ connectionString: config.databaseUrl, max: 12, connectionTimeoutMillis: 3000 });
-pool.on('error', error => console.error('DB_POOL_ERROR', error.message));
 
-export async function ensureSchema() {
-  await pool.query('ALTER TABLE videos ADD COLUMN IF NOT EXISTS video_url text');
+export function createPool(connectionString, label = 'db') {
+  const pool = new pg.Pool({
+    connectionString,
+    max: 10,
+    connectionTimeoutMillis: 3000,
+    idleTimeoutMillis: 10000,
+  });
+  pool.on('error', error => console.error(`DB_POOL_ERROR[${label}]`, error.message));
+  return pool;
 }
 
-export async function transaction(fn) {
+export function createSenderPool(connectionString = config.senderDatabaseUrl) {
+  return createPool(connectionString, 'sender_db');
+}
+
+export function createReceiverPool(connectionString = config.receiverDatabaseUrl) {
+  return createPool(connectionString, 'receiver_db');
+}
+
+export async function withTransaction(pool, fn) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -15,20 +28,13 @@ export async function transaction(fn) {
     await client.query('COMMIT');
     return result;
   } catch (error) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      // Connection may already be broken; PostgreSQL rolls back automatically.
+    }
     throw error;
-  } finally { client.release(); }
-}
-
-// A session lock covers the external call too. On SIGKILL PostgreSQL releases it.
-// All deliveries/replays of one job serialize; different videos/jobs run in parallel.
-export async function withJobLock(jobId, fn) {
-  const client = await pool.connect();
-  try {
-    await client.query('SELECT pg_advisory_lock(hashtextextended($1, 0))', [jobId]);
-    return await fn(client);
   } finally {
-    try { await client.query('SELECT pg_advisory_unlock(hashtextextended($1, 0))', [jobId]); }
-    finally { client.release(); }
+    client.release();
   }
 }

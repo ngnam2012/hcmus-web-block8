@@ -1,5 +1,8 @@
 node_modules
 .git
+.env
+.pids
 evidence
 docs
+*.log
 *.zip

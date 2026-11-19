@@ -1,0 +1,33 @@
+{
+  "label": "F1-after-kill",
+  "captured_at": "2026-11-19T15:44:55.618Z",
+  "sender_db": {
+    "jobs": [
+      {
+        "job_id": "J42",
+        "video_id": "V7",
+        "version": 1,
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+        "status": "READY",
+        "created_at": "2026-11-19T15:44:54.546Z",
+        "completed_at": null
+      },
+      {
+        "job_id": "J43",
+        "video_id": "V7",
+        "version": 2,
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 2, job J43).",
+        "status": "READY",
+        "created_at": "2026-11-19T15:44:54.547Z",
+        "completed_at": null
+      }
+    ],
+    "outbox": [],
+    "delivery_attempts": [],
+    "replay_events": []
+  },
+  "receiver_db": {
+    "inbox": [],
+    "video_summaries": []
+  }
+}

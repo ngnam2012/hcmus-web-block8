@@ -1,1 +1,353 @@
-<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Video Summary · Broker Lab (Gemini AI)</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23167c78'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='18' fill='white'%3E%E2%97%88%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="/style.css"><body><aside><div class="brand">◈ BROKER LAB</div><p>HCMUS · WEB NÂNG CAO</p><nav><a href="#create">Tạo yêu cầu</a><a href="#jobs">Danh sách job</a><a href="#queues">Message queues</a><a href="#detail">Chi tiết xử lý</a></nav><footer>Block 08 / Phần E<br>RabbitMQ · PostgreSQL<br>Google Gemini API</footer></aside><main><header><div><small>MESSAGE BROKER &amp; ASYNC PROCESSING</small><h1>Tóm tắt video với Google Gemini</h1><p>Gửi yêu cầu bất đồng bộ, tóm tắt động qua Gemini API (AI Studio) và kiểm chứng delivery semantics.</p></div><span id="health">Đang kết nối…</span></header><div id="notice" role="status"></div><section id="metrics" class="metrics"></section><div class="columns"><section id="create" class="panel"><h2>Tạo yêu cầu mới</h2><form id="form"><label>Video<select id="video"><option value="V1">V1</option><option value="V7">V7</option><option value="V9">V9</option></select></label><div class="pair"><label>Ngôn ngữ<select id="language"><option value="vi">Tiếng Việt</option><option value="en">English</option></select></label><label>Phong cách<select id="style"><option value="short">Ngắn gọn</option><option value="detailed">Chi tiết</option></select></label></div><label>Chế độ gọi LLM / mô phỏng lỗi (Lab)<select id="fault"><option value="normal">Bình thường (Gemini thật)</option><option value="429">Giả lập 429 hai lần đầu · retry</option><option value="503">Giả lập 503 liên tục · DLQ</option><option value="timeout">Giả lập Timeout lần đầu</option></select></label><div class="pair"><label>Độ trễ bổ sung (ms)<input id="delay" type="number" min="0" max="15000" value="0" required></label><label>Checkpoint<select id="marker"><option value="">Không dừng</option><option>before_llm_call</option><option>after_llm_before_commit</option><option>after_commit_before_ack</option></select></label></div><p class="hint">Checkpoint giữ worker tại marker để thực hiện SIGKILL từ terminal. V9 không có âm thanh và sẽ vào DLQ.</p><button id="submit">Gửi yêu cầu</button><button type="button" class="secondary" id="batch">Gửi 20 job (H1)</button></form><details><summary>+ Thêm video / transcript từ link hoặc nhập tay</summary><form id="videoForm" style="margin-top:12px"><label>Link video (YouTube) hoặc file phụ đề (.vtt / .srt / .txt)<div class="link-row"><input id="newVideoUrl" type="url" placeholder="https://www.youtube.com/watch?v=... hoặc link .vtt/.srt/.txt"><button type="button" class="secondary" id="fetchLink">Lấy transcript</button></div></label><p class="hint" id="linkStatus">Dán link YouTube để tự lấy tiêu đề &amp; phụ đề (hoặc để Gemini tóm tắt trực tiếp qua link nếu video chưa có phụ đề).</p><div class="pair"><label>Mã video (tùy chọn)<input id="newVideoId" placeholder="Để trống tự sinh, vd: V-DEMO"></label><label>Tiêu đề video<input id="newTitle" placeholder="Tự lấy từ link hoặc nhập tay"></label></div><label>Transcript nội dung<textarea id="newTranscript" placeholder="Tự điền từ link hoặc dán nội dung transcript của video..."></textarea></label><label class="inline"><input id="newHasAudio" type="checkbox" checked> Video có âm thanh (bỏ chọn để thử lỗi vĩnh viễn NO_AUDIO)</label><button type="submit" id="createVideo">Lưu video mới</button></form></details></section><section id="queues" class="panel"><h2>Message queues <span class="live">● LIVE</span></h2><div id="queueRows"></div><p class="hint">Ready: message đang chờ. Unacked: đã giao, chưa xác nhận (số liệu management có độ trễ). Consumer: số worker đăng ký.</p><a href="http://127.0.0.1:15678" target="_blank" rel="noreferrer">Mở RabbitMQ Management ↗</a><h3>Hướng dẫn demo</h3><p class="hint">Cấu hình <code>GEMINI_API_KEY</code> (Google AI Studio) trong <code>.env</code> để chạy tóm tắt động. Chọn lỗi 429 để xem retry; chọn 503 để đưa job vào DLQ. Khi job DEAD_LETTERED, chọn job rồi gỡ fault và replay. Các ca crash cần tắt process thật bằng terminal.</p></section></div><section id="jobs" class="panel"><div class="heading"><h2>Danh sách job</h2><select id="filter"><option value="">Tất cả trạng thái</option><option>QUEUED</option><option>DONE</option><option>DEAD_LETTERED</option></select></div><div class="scroll"><table><thead><tr><th>Job / Video</th><th>Version</th><th>Trạng thái</th><th>LLM calls</th><th>Tạo lúc</th><th></th></tr></thead><tbody id="jobRows"></tbody></table></div></section><section id="detail" class="panel"><h2>Chi tiết job</h2><div id="jobDetail" class="hint">Chọn một job để xem kết quả, attempts và thao tác replay.</div></section><p class="bottom">Tự cập nhật mỗi 2 giây · Dữ liệu trực tiếp từ PostgreSQL, RabbitMQ và Gemini API</p></main><script src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Block 9 — Demo Console Trực Quan (Outbox · Relay · HMAC · Inbox)</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">BLOCK 9</div>
+      <div>
+        <h1>Bảng điều khiển Demo 100% trên Web — Block 9</h1>
+        <p class="subtitle">Điều khiển thật 4 tiến trình (Start / Stop / <code>SIGKILL</code>) · Hai DB độc lập (<code>sender_db</code> &amp; <code>receiver_db</code>) · Đủ 11 ca <code>H0, F1–F10</code></p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <label class="toggle">
+        <input type="checkbox" id="auto-refresh" checked />
+        <span>Tự làm mới (0.8s)</span>
+      </label>
+      <button class="btn" id="btn-start-all" type="button">▶ Bật cả 4 tiến trình</button>
+      <button class="btn" id="btn-refresh" type="button">Làm mới</button>
+      <button class="btn danger" id="btn-reset" type="button">Reset Fixture (J42, J43)</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 1. Interactive 4-Process Control Strip (Real Start / Stop / SIGKILL / Marker / Logs) -->
+    <section class="proc-strip" id="proc-strip" aria-label="Điều khiển 4 tiến trình độc lập"></section>
+
+    <!-- 2. Guided Interactive Real-SIGKILL / F10 Banner (shown when F1/F2/F3/F7/F10 is active) -->
+    <section class="card guided-banner hidden" id="guided-banner"></section>
+
+    <!-- 3. Live Visual Pipeline & 4-State Distinction -->
+    <section class="card pipeline-card">
+      <div class="section-head">
+        <div>
+          <h2>Luồng dữ liệu &amp; ranh giới Transaction trực quan</h2>
+          <p class="hint">Quan sát realtime 4 mốc: <code>DONE</code> ≠ <code>DELIVERED</code> ≠ <code>RECEIVED</code> ≠ <code>PROCESSED</code>.</p>
+        </div>
+        <div class="legend">
+          <span class="pill sender">DB Sender</span>
+          <span class="pill relay">HTTP + HMAC ngoài Tx</span>
+          <span class="pill receiver">DB Receiver</span>
+        </div>
+      </div>
+
+      <div class="pipeline">
+        <div class="stage sender-stage">
+          <div class="stage-tag">Tx Sender API</div>
+          <div class="stage-title">jobs</div>
+          <div class="stage-val" id="pipe-jobs">J42: READY · J43: READY</div>
+          <div class="stage-note">FOR UPDATE + DONE + INSERT outbox → COMMIT → 200</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="stage relay-stage">
+          <div class="stage-tag">Tx1 / HTTP / Tx2</div>
+          <div class="stage-title">outbox &amp; attempts</div>
+          <div class="stage-val" id="pipe-outbox">Trống</div>
+          <div class="stage-note">STARTED trước HTTP · 2s timeout · 1/3/9s · DELIVERED sau 2xx</div>
+        </div>
+        <div class="arrow http-arrow">
+          <span>HMAC</span>
+          <span class="arrow-glyph">⟶</span>
+          <span>202</span>
+        </div>
+        <div class="stage receiver-stage">
+          <div class="stage-tag">Tx Receiver API</div>
+          <div class="stage-title">inbox</div>
+          <div class="stage-val" id="pipe-inbox">Trống</div>
+          <div class="stage-note">±300s &amp; HMAC raw body → COMMIT UNIQUE → 202</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="stage worker-stage">
+          <div class="stage-tag">Tx Worker</div>
+          <div class="stage-title">video_summaries</div>
+          <div class="stage-val" id="pipe-summary">V7: 404 (chưa có)</div>
+          <div class="stage-note">UPSERT WHERE new &gt; cur + PROCESSED cùng COMMIT</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. All-in-One Interactive Scenario Deck (ZERO PowerShell needed!) -->
+    <section class="controls-grid">
+      <!-- Panel A: Real SIGKILL & Process-Stop Demos (F1, F2, F3, F7, F10) -->
+      <div class="card highlight-card">
+        <div class="card-head">
+          <h3>Demo Kill thật (<code>SIGKILL</code>) &amp; Tắt Worker</h3>
+          <span class="tag bad-tag">F1 · F2 · F3 · F7 · F10</span>
+        </div>
+        <p class="small">Bấm chọn 1 ca: hệ thống tự nạp fixture, bật marker và dừng tiến trình thật đúng vị trí để bạn tự tay bấm <strong>Kill -9</strong> rồi <strong>Restart</strong> ngay trên web.</p>
+        <div class="btn-group compact">
+          <button class="btn sm danger-soft" data-kill-demo="F1" type="button">F1: Kill Sender trước Outbox</button>
+          <button class="btn sm danger-soft" data-kill-demo="F2" type="button">F2: Kill Sender sau Commit</button>
+          <button class="btn sm danger-soft" data-kill-demo="F3" type="button">F3: Kill Relay sau 202</button>
+          <button class="btn sm danger-soft" data-kill-demo="F7" type="button">F7: Kill Worker trước Commit</button>
+          <button class="btn sm warn" id="btn-demo-f10" type="button">F10: Tắt Worker (DELIVERED ≠ PROCESSED)</button>
+        </div>
+      </div>
+
+      <!-- Panel B: Sender & Ordering Actions (H0, F9) -->
+      <div class="card">
+        <div class="card-head">
+          <h3>Thao tác Sender &amp; Thứ tự Version</h3>
+          <span class="tag sender">H0 · F9</span>
+        </div>
+        <p class="small">Hoàn tất job fixture trong 1 transaction. Gọi lại job đã <code>DONE</code> trả cùng <code>event_id</code>.</p>
+        <div class="btn-group compact">
+          <button class="btn sm primary" id="btn-complete-j42" type="button">H0: Hoàn tất J42 (v1 → E42)</button>
+          <button class="btn sm primary" id="btn-complete-j43" type="button">Hoàn tất J43 (v2 → E43)</button>
+          <button class="btn sm accent" id="btn-demo-f9" type="button">F9: E43 (v2) trước → E42 (v1) sau</button>
+        </div>
+        <div class="divider"></div>
+        <div class="card-head" style="margin-bottom:6px">
+          <h3>Xác thực &amp; Trùng lặp</h3>
+          <span class="tag relay">F5 · F6</span>
+        </div>
+        <div class="btn-group compact">
+          <button class="btn sm" id="btn-sim-f5" type="button">F5: Sửa body / Sai sig / ±300s / Schema</button>
+          <button class="btn sm" id="btn-sim-f6" type="button">F6: 5 bản sao (202) + khác body (409)</button>
+        </div>
+        <div id="sim-output" class="sim-output hidden"></div>
+      </div>
+
+      <!-- Panel C: Receiver Faults (F4, F8, 429, 301, Timeout) -->
+      <div class="card">
+        <div class="card-head">
+          <h3>Tiêm lỗi Receiver (Retry / DEAD / Replay)</h3>
+          <span class="tag receiver">F4 · F8 · 429 · 301</span>
+        </div>
+        <div class="fault-banner" id="active-fault">Trạng thái fault: <strong>Bình thường (không lỗi)</strong></div>
+        <div class="btn-group compact">
+          <button class="btn sm" data-fault="clear" type="button">Gỡ mọi lỗi</button>
+          <button class="btn sm warn" data-fault="f8-503" type="button">F8: 503 liên tục (4 lần → DEAD)</button>
+          <button class="btn sm warn" data-fault="f4-drop" type="button">F4: Đóng socket sau commit 1 lần</button>
+          <button class="btn sm warn" data-fault="429-ra" type="button">429 + Retry-After: 3s</button>
+          <button class="btn sm danger-soft" data-fault="301-redir" type="button">301 Redirect (không theo → DEAD)</button>
+          <button class="btn sm warn" data-fault="timeout-2s" type="button">Chậm 2.5s sau commit (Timeout 2s)</button>
+        </div>
+        <div class="inline-note">Ca <strong>F8</strong>: Bật 503 → bấm <em>Hoàn tất J42</em> → chờ 4 lần (1/3/9s) thành <code>DEAD</code> → bấm <em>Gỡ mọi lỗi</em> → bấm <strong>Replay</strong> ở bảng <code>outbox</code>.</div>
+      </div>
+    </section>
+
+    <!-- 5. Side-by-Side Live Two-Database View -->
+    <section class="dbs-grid">
+      <!-- LEFT: DB SENDER -->
+      <div class="db-column sender-col">
+        <div class="db-banner sender-bg">
+          <div>
+            <h2>DB 1 — <code>sender_db</code></h2>
+            <span class="db-sub">Truy cập độc quyền bởi <code>sender-api</code> &amp; <code>relay</code></span>
+          </div>
+          <span class="db-badge" id="sender-db-counts">0 outbox · 0 attempts</span>
+        </div>
+
+        <div class="card table-card">
+          <div class="card-head">
+            <h3>Bảng <code>jobs</code></h3>
+            <span class="small muted">Fixture cố định (không gọi LLM)</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>job_id</th>
+                  <th>video</th>
+                  <th>ver</th>
+                  <th>status</th>
+                  <th>completed_at</th>
+                  <th>thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-jobs"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="card-head">
+            <h3>Bảng <code>outbox</code></h3>
+            <span class="small muted">raw_body bất biến qua retry &amp; replay</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>event_id</th>
+                  <th>job</th>
+                  <th>status</th>
+                  <th>vòng</th>
+                  <th>next_attempt_at</th>
+                  <th>lỗi cuối</th>
+                  <th>thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-outbox"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="card-head">
+            <h3>Bảng <code>delivery_attempts</code></h3>
+            <span class="small muted">Tự đo khoảng chờ (finished_at trước → started_at sau)</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>attempt</th>
+                  <th>event</th>
+                  <th>vòng / lần</th>
+                  <th>HTTP</th>
+                  <th>outcome</th>
+                  <th>gap đo</th>
+                  <th>chi tiết</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-attempts"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="card-head">
+            <h3>Bảng <code>replay_events</code></h3>
+            <span class="small muted">Nhật ký thao tác replay sự kiện DEAD</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>replay_id</th>
+                  <th>event_id</th>
+                  <th>round</th>
+                  <th>replayed_at</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-replays"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: DB RECEIVER -->
+      <div class="db-column receiver-col">
+        <div class="db-banner receiver-bg">
+          <div>
+            <h2>DB 2 — <code>receiver_db</code></h2>
+            <span class="db-sub">Truy cập độc quyền bởi <code>receiver-api</code> &amp; <code>receiver-worker</code></span>
+          </div>
+          <span class="db-badge" id="receiver-db-counts">0 inbox · 0 summary</span>
+        </div>
+
+        <div class="card summary-spotlight">
+          <div class="card-head">
+            <h3>GET <code>/videos/V7/summary</code> (API khách hàng)</h3>
+            <span class="pill muted-pill" id="v7-http-pill">404</span>
+          </div>
+          <div id="v7-summary-box" class="summary-empty">
+            Chưa có bản tóm tắt nào cho video <code>V7</code> (trả <code>404</code>).
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="card-head">
+            <h3>Bảng <code>inbox</code></h3>
+            <span class="small muted">UNIQUE(source, event_id) · source gắn theo secret</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>source</th>
+                  <th>event_id</th>
+                  <th>status</th>
+                  <th>attempt</th>
+                  <th>received_at</th>
+                  <th>processed_at</th>
+                  <th>body</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-inbox"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card table-card">
+          <div class="card-head">
+            <h3>Bảng <code>video_summaries</code></h3>
+            <span class="small muted">applied_count chỉ tăng khi version mới &gt; hiện tại</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>video_id</th>
+                  <th>version</th>
+                  <th>applied_count</th>
+                  <th>source_event</th>
+                  <th>summary</th>
+                  <th>updated_at</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-summaries"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- One-Click Unit Tests & Full Automated Verification Suite (H0 + F1..F10) -->
+        <div class="card verify-card">
+          <div class="card-head">
+            <div>
+              <h3>Chạy Unit Tests &amp; Kiểm chứng toàn bộ 11 ca (H0 &amp; F1–F10)</h3>
+              <p class="small" style="margin:2px 0 0">Thay hoàn toàn cho <code>npm test</code>, <code>npm run verify</code> và <code>npm run report</code> trên PowerShell.</p>
+            </div>
+            <div class="btn-group compact">
+              <button class="btn" id="btn-run-unit" type="button">Chạy Unit Tests</button>
+              <button class="btn accent" id="btn-run-verify" type="button">Chạy tất cả 11 ca + Report</button>
+            </div>
+          </div>
+          <div id="unit-panel" class="verify-panel hidden"></div>
+          <div id="verify-panel" class="verify-panel hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Live Activity Log -->
+    <section class="card log-card">
+      <div class="card-head">
+        <h3>Nhật ký tương tác</h3>
+        <button class="btn sm" id="btn-clear-log" type="button">Xóa log</button>
+      </div>
+      <div id="activity-log" class="activity-log"></div>
+    </section>
+  </main>
+
+  <!-- Modal for raw_body or process logs -->
+  <dialog id="payload-dialog" class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">Chi tiết</h3>
+      <button class="btn sm" id="modal-close" type="button">Đóng</button>
+    </div>
+    <div class="modal-meta" id="modal-meta"></div>
+    <pre id="modal-content"></pre>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,510 +1,1005 @@
 {
-  "started_at": "2026-11-16T15:07:21.155Z",
-  "selected": "all",
-  "llm": {
-    "status": "ok",
-    "provider": "gemini",
-    "model": "gemini-3.5-flash-lite",
-    "gemini_configured": true
+  "block": 9,
+  "selector": "all",
+  "started_at": "2026-11-19T15:44:47.410Z",
+  "finished_at": "2026-11-19T15:45:22.450Z",
+  "node_version": "v22.19.0",
+  "platform": "win32",
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0
   },
   "results": [
     {
-      "scenario": "B0",
-      "passed": true,
-      "elapsed_ms": 25700,
-      "measurements": {
-        "mock_delay_ms": 800,
-        "V0": [
+      "id": "H0",
+      "kind": "Tự động",
+      "title": "Hoàn tất J42, không fault",
+      "status": "PASS",
+      "duration_ms": 7038,
+      "expected": "J42 DONE, 1 outbox E42 DELIVERED, 1 attempt ACKNOWLEDGED (202), 1 inbox E42 PROCESSED, V7 version 1, applied_count = 1.",
+      "observed": {
+        "client_complete": {
+          "status": 200,
+          "body": {
+            "job_id": "J42",
+            "event_id": "E42",
+            "status": "DONE",
+            "outbox_status": "PENDING",
+            "already_completed": false
+          }
+        },
+        "event_status": "DELIVERED",
+        "inbox_status": "PROCESSED",
+        "summary": {
+          "video_id": "V7",
+          "version": 1,
+          "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+          "applied_count": 1,
+          "source_event_id": "E42",
+          "updated_at": "2026-11-19T15:44:54.428Z"
+        },
+        "snapshots": [
+          "H0.json"
+        ]
+      },
+      "error": null,
+      "process_log": [
+        {
+          "at": "2026-11-19T15:44:53.553Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 10068,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:53.758Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 26380,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:54.052Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 17320,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:54.338Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 3060,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:54.504Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 10068
+        },
+        {
+          "at": "2026-11-19T15:44:54.510Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 26380
+        },
+        {
+          "at": "2026-11-19T15:44:54.516Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 17320
+        },
+        {
+          "at": "2026-11-19T15:44:54.522Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 3060
+        }
+      ]
+    },
+    {
+      "id": "F1",
+      "kind": "Kill thật",
+      "title": "Kill sender trước khi INSERT outbox",
+      "status": "PASS",
+      "duration_ms": 1521,
+      "expected": "Kill sender tại after_job_update_before_outbox => rollback: J42 vẫn READY, 0 outbox. Restart và gọi complete lại => đạt H0.",
+      "observed": {
+        "marker": "MARKER after_job_update_before_outbox {\"pid\":14084,\"marker\":\"after_job_update_before_outbox\",\"at\":\"2026-11-19T15:44:55.603Z\",\"job_id\":\"J42\"}",
+        "kill": {
+          "at": "2026-11-19T15:44:55.603Z",
+          "action": "kill -9 (SIGKILL)",
+          "service": "sender-api",
+          "pid": 14084,
+          "reason": "after_job_update_before_outbox",
+          "exit_code": null,
+          "exit_signal": "SIGKILL"
+        },
+        "client_first_attempt": {
+          "ok": false,
+          "error": "fetch failed"
+        },
+        "client_retry_complete": {
+          "status": 200,
+          "body": {
+            "job_id": "J42",
+            "event_id": "E42",
+            "status": "DONE",
+            "outbox_status": "PENDING",
+            "already_completed": false
+          }
+        },
+        "snapshots": [
+          "F1-after-kill.json",
+          "F1.json"
+        ]
+      },
+      "error": null,
+      "process_log": [
+        {
+          "at": "2026-11-19T15:44:54.874Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 6284,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:55.084Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 8468,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:55.276Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 25604,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:55.592Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 14084,
+          "marker": "after_job_update_before_outbox"
+        },
+        {
+          "at": "2026-11-19T15:44:55.603Z",
+          "action": "kill -9 (SIGKILL)",
+          "service": "sender-api",
+          "pid": 14084,
+          "reason": "after_job_update_before_outbox",
+          "exit_code": null,
+          "exit_signal": "SIGKILL"
+        },
+        {
+          "at": "2026-11-19T15:44:55.927Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 3872,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:56.067Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 6284
+        },
+        {
+          "at": "2026-11-19T15:44:56.074Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 8468
+        },
+        {
+          "at": "2026-11-19T15:44:56.079Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 25604
+        },
+        {
+          "at": "2026-11-19T15:44:56.085Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 3872
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "kind": "Kill thật",
+      "title": "Kill sender sau commit, trước response",
+      "status": "PASS",
+      "duration_ms": 1394,
+      "expected": "Tắt relay, kill sender tại after_sender_commit_before_response => DB đã có J42 DONE & outbox E42 PENDING dù client không nhận response. Gọi complete lại trả cùng E42; bật relay => đạt H0.",
+      "observed": {
+        "marker": "MARKER after_sender_commit_before_response {\"pid\":11332,\"marker\":\"after_sender_commit_before_response\",\"at\":\"2026-11-19T15:44:56.958Z\",\"job_id\":\"J42\",\"event_id\":\"E42\"}",
+        "kill": {
+          "at": "2026-11-19T15:44:56.958Z",
+          "action": "kill -9 (SIGKILL)",
+          "service": "sender-api",
+          "pid": 11332,
+          "reason": "after_sender_commit_before_response",
+          "exit_code": null,
+          "exit_signal": "SIGKILL"
+        },
+        "client_first_attempt": {
+          "ok": false,
+          "error": "fetch failed"
+        },
+        "client_idempotent_retry": {
+          "status": 200,
+          "body": {
+            "job_id": "J42",
+            "event_id": "E42",
+            "status": "DONE",
+            "outbox_status": "PENDING",
+            "already_completed": true
+          }
+        },
+        "snapshots": [
+          "F2-after-kill.json",
+          "F2.json"
+        ]
+      },
+      "error": null,
+      "process_log": [
+        {
+          "at": "2026-11-19T15:44:56.431Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 10256,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:56.638Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 10812,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:56.941Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 11332,
+          "marker": "after_sender_commit_before_response"
+        },
+        {
+          "at": "2026-11-19T15:44:56.958Z",
+          "action": "kill -9 (SIGKILL)",
+          "service": "sender-api",
+          "pid": 11332,
+          "reason": "after_sender_commit_before_response",
+          "exit_code": null,
+          "exit_signal": "SIGKILL"
+        },
+        {
+          "at": "2026-11-19T15:44:57.273Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 2988,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:57.483Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 10388,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:57.503Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 10256
+        },
+        {
+          "at": "2026-11-19T15:44:57.510Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 10812
+        },
+        {
+          "at": "2026-11-19T15:44:57.515Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 2988
+        },
+        {
+          "at": "2026-11-19T15:44:57.520Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 10388
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "kind": "Kill thật",
+      "title": "Kill relay sau 2xx, trước DELIVERED",
+      "status": "PASS",
+      "duration_ms": 2475,
+      "expected": "Kill relay tại after_http_2xx_before_delivery_commit => receiver đã có inbox E42, sender còn PENDING & A1 STARTED. Restart relay: A1 -> UNKNOWN, gửi A2 cùng E42 -> 202, 1 inbox, applied_count = 1.",
+      "observed": {
+        "marker": "MARKER after_http_2xx_before_delivery_commit {\"pid\":5432,\"marker\":\"after_http_2xx_before_delivery_commit\",\"at\":\"2026-11-19T15:44:58.683Z\",\"event_id\":\"E42\",\"attempt_id\":\"A1\",\"http_status\":202}",
+        "kill": {
+          "at": "2026-11-19T15:44:58.683Z",
+          "action": "kill -9 (SIGKILL)",
+          "service": "relay",
+          "pid": 5432,
+          "reason": "after_http_2xx_before_delivery_commit",
+          "exit_code": null,
+          "exit_signal": "SIGKILL"
+        },
+        "attempts": [
           {
-            "job_id": "43dfbf0c-fe83-4c40-a219-461867d1ef5f",
-            "http_status": 200,
-            "response_ms": 2752
+            "attempt_id": "A1",
+            "event_id": "E42",
+            "round": 1,
+            "attempt_in_round": 1,
+            "outcome": "UNKNOWN",
+            "http_status": null
           },
           {
-            "job_id": "5da2bb1c-7e4f-4423-8a08-6d4887955828",
-            "http_status": 200,
-            "response_ms": 2119
-          },
-          {
-            "job_id": "b23fabc8-f446-4ff7-a97c-cd4e56edc339",
-            "http_status": 200,
-            "response_ms": 2250
-          },
-          {
-            "job_id": "c75a178b-0cce-4190-830d-dfade40a74e8",
-            "http_status": 200,
-            "response_ms": 1536
-          },
-          {
-            "job_id": "5381f708-002c-4885-8111-adcfb64a5295",
-            "http_status": 200,
-            "response_ms": 1826
+            "attempt_id": "A2",
+            "event_id": "E42",
+            "round": 1,
+            "attempt_in_round": 2,
+            "outcome": "ACKNOWLEDGED",
+            "http_status": 202
           }
         ],
-        "V3": [
+        "snapshots": [
+          "F3-after-kill.json",
+          "F3.json"
+        ]
+      },
+      "error": null,
+      "process_log": [
+        {
+          "at": "2026-11-19T15:44:57.874Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 12136,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:58.074Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 26260,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:58.379Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 15368,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:44:58.576Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 5432,
+          "marker": "after_http_2xx_before_delivery_commit"
+        },
+        {
+          "at": "2026-11-19T15:44:58.683Z",
+          "action": "kill -9 (SIGKILL)",
+          "service": "relay",
+          "pid": 5432,
+          "reason": "after_http_2xx_before_delivery_commit",
+          "exit_code": null,
+          "exit_signal": "SIGKILL"
+        },
+        {
+          "at": "2026-11-19T15:44:58.885Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 21648,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:45:00.017Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 12136
+        },
+        {
+          "at": "2026-11-19T15:45:00.023Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 26260
+        },
+        {
+          "at": "2026-11-19T15:45:00.029Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 15368
+        },
+        {
+          "at": "2026-11-19T15:45:00.034Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 21648
+        }
+      ]
+    },
+    {
+      "id": "F4",
+      "kind": "Tự động",
+      "title": "Receiver đóng kết nối sau commit inbox",
+      "status": "PASS",
+      "duration_ms": 2355,
+      "expected": "Marker after_inbox_commit_before_response (bật 1 lần) => sender ghi A1 RETRYABLE, inbox đã có E42; retry A2 thành 202/DELIVERED; 1 inbox; sau khi worker chạy, applied_count = 1.",
+      "observed": {
+        "marker": "MARKER after_inbox_commit_before_response {\"pid\":15780,\"marker\":\"after_inbox_commit_before_response\",\"at\":\"2026-11-19T15:45:01.067Z\",\"event_id\":\"E42\",\"mode\":\"close_socket_once\"}",
+        "attempts": [
           {
-            "job_id": "686bb179-776d-4388-a532-d0422a88f162",
-            "http_status": 202,
-            "response_ms": 12,
-            "done_after_ms": 2120,
-            "completed_at": "2026-11-16T15:07:36.516Z"
+            "attempt_id": "A1",
+            "outcome": "RETRYABLE",
+            "http_status": null,
+            "error_detail": "UND_ERR_SOCKET"
           },
           {
-            "job_id": "2c3987b7-bf72-4618-bd93-69ee4d0ada76",
+            "attempt_id": "A2",
+            "outcome": "ACKNOWLEDGED",
             "http_status": 202,
-            "response_ms": 11,
-            "done_after_ms": 2003,
-            "completed_at": "2026-11-16T15:07:38.625Z"
-          },
-          {
-            "job_id": "66e8779e-3145-4e60-8d1e-558191e65f8c",
-            "http_status": 202,
-            "response_ms": 11,
-            "done_after_ms": 2613,
-            "completed_at": "2026-11-16T15:07:41.134Z"
-          },
-          {
-            "job_id": "afe0192f-5cb3-43a7-92e6-921d3b690301",
-            "http_status": 202,
-            "response_ms": 9,
-            "done_after_ms": 2166,
-            "completed_at": "2026-11-16T15:07:43.254Z"
-          },
-          {
-            "job_id": "baeb3403-2ac6-445a-a7f3-28fe2f69f102",
-            "http_status": 202,
-            "response_ms": 10,
-            "done_after_ms": 1959,
-            "completed_at": "2026-11-16T15:07:45.275Z"
+            "error_detail": null
           }
+        ],
+        "snapshots": [
+          "F4-after-attempt-1.json",
+          "F4.json"
         ]
       },
-      "commands": [
+      "error": null,
+      "process_log": [
         {
-          "at": "2026-11-16T15:07:21.192Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:00.378Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 15780,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:07:21.680Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:00.597Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 13772,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:07:23.178Z",
-          "command": "docker compose run -d --no-deps --name hcmus-block8-benchmark -p 127.0.0.1:3010:3000 -e APP_VERSION=V0 api",
-          "output": "2b7ed930eb4ca5e34eed063f553b4423002c817cb5ce3a76b2602e4c89eb75df"
+          "at": "2026-11-19T15:45:00.806Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 13372,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:07:45.615Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:02.400Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 23088,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:07:46.891Z",
-          "command": "docker rm -f hcmus-block8-benchmark"
+          "at": "2026-11-19T15:45:02.414Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 15780
+        },
+        {
+          "at": "2026-11-19T15:45:02.419Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 13772
+        },
+        {
+          "at": "2026-11-19T15:45:02.424Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 13372
+        },
+        {
+          "at": "2026-11-19T15:45:02.430Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 23088
         }
       ]
     },
     {
-      "scenario": "H0",
-      "passed": true,
-      "elapsed_ms": 5669,
-      "measurements": {
-        "response_ms": 13,
-        "completed_at": "2026-11-16T15:07:51.349Z"
-      },
-      "commands": [
-        {
-          "at": "2026-11-16T15:07:46.892Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+      "id": "F5",
+      "kind": "Tự động",
+      "title": "Payload sửa, chữ ký sai, timestamp lệch",
+      "status": "PASS",
+      "duration_ms": 537,
+      "expected": "Payload bị sửa, chữ ký sai, timestamp quá cũ (>300s), timestamp quá xa tương lai (>300s) đều trả 401; sai schema trả 400; inbox rỗng, không đổi video_summaries.",
+      "observed": {
+        "responses": {
+          "tampered_body": {
+            "status": 401,
+            "body": {
+              "error": "SIGNATURE_MISMATCH"
+            }
+          },
+          "wrong_signature": {
+            "status": 401,
+            "body": {
+              "error": "SIGNATURE_MISMATCH"
+            }
+          },
+          "timestamp_too_old": {
+            "status": 401,
+            "body": {
+              "error": "TIMESTAMP_OUT_OF_WINDOW"
+            }
+          },
+          "timestamp_too_future": {
+            "status": 401,
+            "body": {
+              "error": "TIMESTAMP_OUT_OF_WINDOW"
+            }
+          },
+          "invalid_schema": {
+            "status": 400,
+            "body": {
+              "error": "INVALID_SCHEMA",
+              "detail": "data.version must be a positive integer"
+            }
+          }
         },
-        {
-          "at": "2026-11-16T15:07:47.399Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:07:51.729Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        }
-      ]
-    },
-    {
-      "scenario": "F1",
-      "passed": true,
-      "elapsed_ms": 16355,
-      "measurements": {
-        "marker": "before_llm_call",
-        "killed_with": "SIGKILL",
-        "mock_calls_before_restart": 0,
-        "mock_calls_succeeded": 1,
-        "mock_calls_total": 1,
-        "known_gap": null
-      },
-      "commands": [
-        {
-          "at": "2026-11-16T15:07:52.561Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:07:53.138Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:02.096Z",
-          "command": "docker compose stop -t 1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:02.619Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":1,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        },
-        {
-          "at": "2026-11-16T15:08:03.485Z",
-          "command": "docker compose kill -s SIGKILL worker-1",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:03.849Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        },
-        {
-          "at": "2026-11-16T15:08:04.855Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:08.121Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        }
-      ]
-    },
-    {
-      "scenario": "F2",
-      "passed": true,
-      "elapsed_ms": 10626,
-      "measurements": {
-        "retry_gaps_ms": [
-          1028,
-          3009
+        "snapshots": [
+          "F5.json"
         ]
       },
-      "commands": [
+      "error": null,
+      "process_log": [
         {
-          "at": "2026-11-16T15:08:08.917Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:02.780Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 14476,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:08:09.338Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:02.978Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 23752,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:08:18.671Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:03.003Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 14476
+        },
+        {
+          "at": "2026-11-19T15:45:03.009Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 23752
         }
       ]
     },
     {
-      "scenario": "F3",
-      "passed": true,
-      "elapsed_ms": 3509,
-      "commands": [
-        {
-          "at": "2026-11-16T15:08:19.543Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+      "id": "F6",
+      "kind": "Tự động",
+      "title": "5 bản sao đồng thời; cùng ID khác body",
+      "status": "PASS",
+      "duration_ms": 646,
+      "expected": "5 bản sao đồng thời cùng E42 cùng payload đều trả 202, chỉ 1 inbox, applied_count = 1. Cùng event_id nhưng khác body (chữ ký hợp lệ) => 409, dữ liệu cũ không đổi.",
+      "observed": {
+        "concurrent_statuses": [
+          202,
+          202,
+          202,
+          202,
+          202
+        ],
+        "conflict_response": {
+          "status": 409,
+          "body": {
+            "error": "PAYLOAD_CONFLICT",
+            "event_id": "E42"
+          }
         },
-        {
-          "at": "2026-11-16T15:08:20.018Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:22.093Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        }
-      ]
-    },
-    {
-      "scenario": "F4",
-      "passed": true,
-      "elapsed_ms": 19235,
-      "commands": [
-        {
-          "at": "2026-11-16T15:08:23.052Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:23.579Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:39.119Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        },
-        {
-          "at": "2026-11-16T15:08:41.451Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        }
-      ]
-    },
-    {
-      "scenario": "F5",
-      "passed": true,
-      "elapsed_ms": 10931,
-      "measurements": {
-        "marker": "after_commit_before_ack",
-        "killed_with": "SIGKILL",
-        "mock_calls_before_restart": 1,
-        "mock_calls_succeeded": 1,
-        "mock_calls_total": 1,
-        "known_gap": null
+        "snapshots": [
+          "F6.json"
+        ]
       },
-      "commands": [
+      "error": null,
+      "process_log": [
         {
-          "at": "2026-11-16T15:08:42.288Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:03.352Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 9196,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:08:42.763Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:03.551Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 4964,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:08:44.336Z",
-          "command": "docker compose stop -t 1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:03.691Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 9196
         },
         {
-          "at": "2026-11-16T15:08:46.219Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":1,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        },
-        {
-          "at": "2026-11-16T15:08:47.087Z",
-          "command": "docker compose kill -s SIGKILL worker-1",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:47.406Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        },
-        {
-          "at": "2026-11-16T15:08:48.401Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
-        },
-        {
-          "at": "2026-11-16T15:08:52.403Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:03.696Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 4964
         }
       ]
     },
     {
-      "scenario": "F6",
-      "passed": true,
-      "elapsed_ms": 23128,
-      "measurements": {
-        "orphan_job_id": "7eb6a740-f7be-4a58-af96-7f9d7d08b94b",
-        "http_when_broker_down": 503,
-        "accepted_survived": 5,
-        "llm_calls_total": 5,
-        "known_gap": 1
+      "id": "F7",
+      "kind": "Kill thật",
+      "title": "Kill worker trước commit",
+      "status": "PASS",
+      "duration_ms": 1470,
+      "expected": "Kill receiver worker tại after_projection_write_before_commit => rollback: inbox vẫn RECEIVED, video_summaries rỗng (404). Restart worker => PROCESSED, applied_count = 1.",
+      "observed": {
+        "marker": "MARKER after_projection_write_before_commit {\"pid\":24572,\"marker\":\"after_projection_write_before_commit\",\"at\":\"2026-11-19T15:45:04.858Z\",\"event_id\":\"E42\",\"video_id\":\"V7\",\"version\":1,\"applied\":true}",
+        "kill": {
+          "at": "2026-11-19T15:45:04.858Z",
+          "action": "kill -9 (SIGKILL)",
+          "service": "receiver-worker",
+          "pid": 24572,
+          "reason": "after_projection_write_before_commit",
+          "exit_code": null,
+          "exit_signal": "SIGKILL"
+        },
+        "summary_after_kill_status": 404,
+        "snapshots": [
+          "F7-after-kill.json",
+          "F7.json"
+        ]
       },
-      "commands": [
+      "error": null,
+      "process_log": [
         {
-          "at": "2026-11-16T15:08:53.219Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:04.045Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 500,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:08:53.739Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:04.255Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 24572,
+          "marker": "after_projection_write_before_commit"
         },
         {
-          "at": "2026-11-16T15:08:55.281Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:04.558Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 11596,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:08:55.886Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":5}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:04.751Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 24204,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:08:56.946Z",
-          "command": "docker compose stop rabbitmq",
-          "output": ""
+          "at": "2026-11-19T15:45:04.858Z",
+          "action": "kill -9 (SIGKILL)",
+          "service": "receiver-worker",
+          "pid": 24572,
+          "reason": "after_projection_write_before_commit",
+          "exit_code": null,
+          "exit_signal": "SIGKILL"
         },
         {
-          "at": "2026-11-16T15:09:01.580Z",
-          "command": "docker compose start rabbitmq",
-          "output": ""
+          "at": "2026-11-19T15:45:05.168Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 4716,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:09:05.285Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:05.189Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 500
         },
         {
-          "at": "2026-11-16T15:09:15.484Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:05.198Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 11596
+        },
+        {
+          "at": "2026-11-19T15:45:05.204Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 24204
+        },
+        {
+          "at": "2026-11-19T15:45:05.210Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 4716
         }
       ]
     },
     {
-      "scenario": "F7",
-      "passed": true,
-      "elapsed_ms": 10432,
-      "measurements": {
-        "v1_completed": "2026-11-16T15:09:25.713Z",
-        "v2_completed": "2026-11-16T15:09:19.987Z",
-        "current_version": 2
+      "id": "F8",
+      "kind": "Tự động",
+      "title": "503 cả 4 lần, rồi replay",
+      "status": "PASS",
+      "duration_ms": 14630,
+      "expected": "4 attempt 503 (chờ 1, 3, 9s) => E42 DEAD, inbox rỗng. Gỡ fault, replay giữ event_id & raw_body, mở vòng 2 => DELIVERED, PROCESSED, applied_count = 1; replay khi DELIVERED trả 409.",
+      "observed": {
+        "backoff_policy_ms": [
+          1000,
+          3000,
+          9000
+        ],
+        "measured_gaps_ms": [
+          1050,
+          3026,
+          9052
+        ],
+        "tolerance_ms": {
+          "min_delta": -50,
+          "max_delta": 1000
+        },
+        "replay_response": {
+          "status": 200,
+          "body": {
+            "event_id": "E42",
+            "status": "PENDING",
+            "replay_round": 2,
+            "next_attempt_at": "2026-11-19T15:45:19.640Z"
+          }
+        },
+        "replay_when_delivered_status": 409,
+        "raw_body_preserved": true,
+        "snapshots": [
+          "F8-before-replay.json",
+          "F8.json"
+        ]
       },
-      "commands": [
+      "error": null,
+      "process_log": [
         {
-          "at": "2026-11-16T15:09:16.347Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:05.554Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 9164,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:09:16.890Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:05.763Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 27540,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:09:25.969Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:06.070Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 10084,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:45:06.274Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 8624,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:45:19.860Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 9164
+        },
+        {
+          "at": "2026-11-19T15:45:19.866Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 27540
+        },
+        {
+          "at": "2026-11-19T15:45:19.873Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 10084
+        },
+        {
+          "at": "2026-11-19T15:45:19.879Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 8624
         }
       ]
     },
     {
-      "scenario": "F8",
-      "passed": true,
-      "elapsed_ms": 14362,
-      "measurements": {
-        "marker": "after_llm_before_commit",
-        "killed_with": "SIGKILL",
-        "mock_calls_before_restart": 1,
-        "mock_calls_succeeded": 2,
-        "mock_calls_total": 2,
-        "known_gap": 3
+      "id": "F9",
+      "kind": "Tự động",
+      "title": "E43 (version 2) trước E42 (version 1)",
+      "status": "PASS",
+      "duration_ms": 1309,
+      "expected": "Chờ worker xử lý từng event. Cả hai inbox PROCESSED; bản hiện tại vẫn version 2, applied_count = 1.",
+      "observed": {
+        "after_E43": {
+          "video_id": "V7",
+          "version": 2,
+          "summary": "Nội dung tóm tắt giả định của video V7 (version 2, job J43).",
+          "applied_count": 1,
+          "source_event_id": "E43",
+          "updated_at": "2026-11-19T15:45:21.050Z"
+        },
+        "after_E42": {
+          "video_id": "V7",
+          "version": 2,
+          "summary": "Nội dung tóm tắt giả định của video V7 (version 2, job J43).",
+          "applied_count": 1,
+          "source_event_id": "E43",
+          "updated_at": "2026-11-19T15:45:21.050Z"
+        },
+        "snapshots": [
+          "F9.json"
+        ]
       },
-      "commands": [
+      "error": null,
+      "process_log": [
         {
-          "at": "2026-11-16T15:09:26.779Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:20.230Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 27512,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:09:27.375Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:20.438Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 500,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:09:28.910Z",
-          "command": "docker compose stop -t 1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:20.740Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 6236,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:09:30.380Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":1,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:20.949Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 6336,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:09:31.283Z",
-          "command": "docker compose kill -s SIGKILL worker-1",
-          "output": ""
+          "at": "2026-11-19T15:45:21.213Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 27512
         },
         {
-          "at": "2026-11-16T15:09:31.607Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":1}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:21.219Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 500
         },
         {
-          "at": "2026-11-16T15:09:32.489Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:21.225Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 6236
         },
         {
-          "at": "2026-11-16T15:09:40.361Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:21.232Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 6336
         }
       ]
     },
     {
-      "scenario": "timeout",
-      "passed": true,
-      "elapsed_ms": 20993,
-      "commands": [
-        {
-          "at": "2026-11-16T15:09:41.141Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+      "id": "F10",
+      "kind": "Tự động",
+      "title": "Worker tắt, hoàn tất J42",
+      "status": "PASS",
+      "duration_ms": 1174,
+      "expected": "Khi worker tắt: sender DELIVERED, inbox RECEIVED, GET /videos/V7/summary trả 404. Bật worker: inbox PROCESSED, bản tóm tắt xuất hiện (version 1, applied_count = 1).",
+      "observed": {
+        "while_worker_stopped": {
+          "sender_event_status": "DELIVERED",
+          "receiver_inbox_status": "RECEIVED",
+          "receiver_summary_http_status": 404
         },
-        {
-          "at": "2026-11-16T15:09:41.626Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+        "after_worker_started": {
+          "video_id": "V7",
+          "version": 1,
+          "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+          "applied_count": 1,
+          "source_event_id": "E42",
+          "updated_at": "2026-11-19T15:45:22.374Z"
         },
-        {
-          "at": "2026-11-16T15:10:01.341Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
-        }
-      ]
-    },
-    {
-      "scenario": "H1",
-      "passed": true,
-      "elapsed_ms": 64182,
-      "measurements": {
-        "total_llm_calls": 20,
-        "succeeded_calls": 20,
-        "transient_retries": 0
+        "snapshots": [
+          "F10-worker-stopped.json",
+          "F10.json"
+        ]
       },
-      "commands": [
+      "error": null,
+      "process_log": [
         {
-          "at": "2026-11-16T15:10:02.134Z",
-          "command": "docker compose stop -t 1 worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:21.577Z",
+          "action": "start",
+          "service": "receiver-api",
+          "pid": 13608,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:10:02.595Z",
-          "command": "docker compose up -d worker-1 worker-2",
-          "output": ""
+          "at": "2026-11-19T15:45:21.885Z",
+          "action": "start",
+          "service": "sender-api",
+          "pid": 20364,
+          "marker": null
         },
         {
-          "at": "2026-11-16T15:11:05.410Z",
-          "command": "docker compose exec -T rabbitmq rabbitmqctl -q list_queues name messages_ready messages_unacknowledged --formatter json",
-          "output": "[\n{\"name\":\"summaries.main\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.1000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.dlq\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.3000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n,{\"name\":\"summaries.retry.9000\",\"messages_unacknowledged\":0,\"messages_ready\":0}\n]"
+          "at": "2026-11-19T15:45:22.090Z",
+          "action": "start",
+          "service": "relay",
+          "pid": 27560,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:45:22.419Z",
+          "action": "start",
+          "service": "receiver-worker",
+          "pid": 26240,
+          "marker": null
+        },
+        {
+          "at": "2026-11-19T15:45:22.434Z",
+          "action": "stop",
+          "service": "receiver-api",
+          "pid": 13608
+        },
+        {
+          "at": "2026-11-19T15:45:22.440Z",
+          "action": "stop",
+          "service": "sender-api",
+          "pid": 20364
+        },
+        {
+          "at": "2026-11-19T15:45:22.444Z",
+          "action": "stop",
+          "service": "relay",
+          "pid": 27560
+        },
+        {
+          "at": "2026-11-19T15:45:22.449Z",
+          "action": "stop",
+          "service": "receiver-worker",
+          "pid": 26240
         }
       ]
     }
-  ],
-  "finished_at": "2026-11-16T15:11:06.317Z",
-  "passed": true
+  ]
 }

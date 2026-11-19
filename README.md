@@ -1,128 +1,119 @@
-# hcmus-web-block8 — Message Broker & xử lý bất đồng bộ
+# Block 9 — Giao sự kiện tin cậy với Outbox, Inbox và Webhook
 
-Bài làm **Phần E, Block 8**: tóm tắt video qua RabbitMQ, API Node.js, PostgreSQL, hai competing consumer và **Google Gemini API (Google AI Studio)** thông qua `@google/genai` (Interactions API). Hệ thống hỗ trợ thêm video/transcript động qua API/UI và vẫn giữ tầng đếm lời gọi + fault injection cục bộ để kiểm chứng delivery semantics (retry, DLQ, crash recovery).
+Bài thực hành **Block 9**: giao sự kiện `summary.completed` từ dịch vụ tóm tắt (**sender**) sang dịch vụ danh sách video (**receiver**) qua HTTP webhook tin cậy, sử dụng **Transactional Outbox**, **Single Relay**, **HMAC-SHA256 trên raw body**, **Durable Inbox** và **Receiver Worker**.
 
-Đề gốc: <https://pub.nndkhoa9.win/webadv/w7/block-08-broker-interactive.html#1>.
+Đề bài gốc: <https://pub.nndkhoa9.win/webadv/w8/block-09-reliable-events-interactive.html#1>
 
-## Cấu hình Google Gemini API (Google AI Studio)
+## Kiến trúc ngắn gọn
 
-1. Tạo API key tại Google AI Studio: <https://aistudio.google.com/api-keys>.
-2. Sao chép `.env.example` thành `.env` (hoặc chỉnh file `.env` hiện có) và điền `GEMINI_API_KEY`:
+- **4 tiến trình dừng/kill được riêng:** `sender-api` (port 4000), `relay` (health 4002), `receiver-api` (port 4100), `receiver-worker` (health 4102).
+- **2 DB logic độc lập** trên cùng PostgreSQL 17: `sender_db` (`jobs`, `outbox`, `delivery_attempts`, `replay_events`) và `receiver_db` (`inbox`, `video_summaries`). Không có transaction xuyên hai DB.
+- **Fixture cố định:** `J42` (`V7`, version 1) và `J43` (`V7`, version 2); không gọi LLM.
+- **Tối giản đúng phạm vi lab:** một endpoint cố định trên loopback, một relay, không theo redirect, không dùng broker / CDC; Demo Console web (`src/lab-ui.js`) là giao diện phụ trợ tùy chọn cho harness/process-controller, chạy hoàn toàn tách biệt với 4 tiến trình nghiệp vụ.
 
-```dotenv
-GEMINI_API_KEY=AIzaSy...
-GEMINI_MODEL=gemini-3.5-flash-lite
-LLM_PROVIDER=gemini
-LLM_TIMEOUT_MS=15000
-```
+## Chạy nhanh (Windows / PowerShell)
 
-- `LLM_PROVIDER=gemini` (mặc định): mọi request tóm tắt bình thường sẽ gọi **Google Gemini API** động theo `title`, `transcript`, `options.language` và `options.style`.
-- Nếu chạy bài test tải hàng loạt (`H1` / `verify`) trên máy không có mạng hoặc muốn tránh chạm giới hạn RPM của AI Studio Free Tier, có thể tạm đổi `LLM_PROVIDER=mock` trong `.env`.
-
-## Chạy nhanh trên Windows / PowerShell
-
-Yêu cầu: Docker Desktop chạy **Linux containers**, Docker Compose v2; Node.js >= 22 để chạy test/script trên máy. Các port mặc định: 3000, 3001, 5438, 5678, 15678.
+Yêu cầu: Docker Desktop (Linux containers) cho PostgreSQL 17, Node.js >= 22.
 
 ```powershell
-Set-Location c:\Users\admin\Downloads\block8\hcmus-web-block8
-Copy-Item .env.example .env   # sau đó điền GEMINI_API_KEY vào .env
+# 1. Tạo .env từ .env.example và đặt WEBHOOK_SECRET cục bộ (không commit .env)
+Copy-Item .env.example .env
+
+# 2. Cài dependencies (chỉ express và pg)
 npm.cmd ci
-docker compose up -d --build --wait
+
+# 3. Khởi động PostgreSQL, chạy migration & nạp fixture J42/J43
+docker compose up -d postgres --wait
+npm.cmd run seed
+
+# 4. Chạy unit tests
 npm.cmd test
-npm.cmd run test:integration
+
+# 5. Chạy toàn bộ harness H0 và F1–F10 (có kill thật SIGKILL cho F1, F2, F3, F7)
+npm.cmd run verify
+
+# 6. Tạo lại báo cáo từ dữ liệu đo thật
+npm.cmd run report
 ```
 
-`verify` chạy B0, H0, H1, F1–F8 và timeout, mỗi ca dùng dữ liệu mới; xuất chứng cứ thực đo vào `evidence/`. Script tự dừng/start worker, SIGKILL worker tại marker và restart broker; **chỉ chạy trong project lab này**, không chạy đồng thời nhiều script. Dữ liệu lab cũ được reset. Khoảng 3–6 phút tùy máy (lần đầu tải image lâu hơn).
+## Contract API
 
-Nếu đã có `.env`, giữ cấu hình của bạn. Khi thay port/URL, đồng bộ các biến Node với `.env` qua Node `--env-file=.env` như hướng dẫn trong `docs/TESTING.md`; Docker Compose tự đọc `.env`, npm/Node mặc định không tự đọc.
+| Dịch vụ | Route | Hành vi |
+| --- | --- | --- |
+| Sender | `POST /jobs/:job_id/complete` | 1 transaction: khóa job, `READY` → `DONE`, `INSERT outbox` với `raw_body` bất biến. Trả `200` sau commit; gọi lại trả cùng `event_id`. |
+| Sender | `GET /events/:event_id` | Trạng thái outbox, lịch sử `delivery_attempts` và `replay_events`. |
+| Sender | `POST /events/:event_id/replay` | Chỉ nhận `DEAD` (khác trả `409`); giữ `event_id` & `raw_body`, mở vòng mới tối đa 4 lần, ghi `replay_events`. |
+| Receiver | `POST /webhooks/summaries` | Kiểm timestamp `±300s` & HMAC constant-time trên raw body (`401`), parse & schema (`400`), `INSERT inbox UNIQUE(source, event_id)` + commit → `202` (bản sao cùng payload: `202`; cùng ID khác payload: `409`). |
+| Receiver | `GET /inbox/:event_id` | Trạng thái `RECEIVED` / `PROCESSED`, thời điểm nhận và xử lý. |
+| Receiver | `GET /videos/:video_id/summary` | Version hiện tại, nội dung, `applied_count`; chưa có trả `404`. |
+
+## Chạy / dừng từng tiến trình riêng
+
+Qua script Node cục bộ (`scripts/process-ctl.js`):
 
 ```powershell
-# Chỉ các test bắt buộc H0, F2, F3, F4, F7
-npm.cmd run test:integration
-# Các demo H1, F1, F5, F6, F8 (script hóa nhưng vẫn kill process thật)
-npm.cmd run demo
-# Một ca hoặc phép đo B0
-node scripts/scenarios.js F5
-npm.cmd run benchmark
-# Snapshot DB + ready/unacked + DLQ payload
-npm.cmd run snapshot -- my-snapshot
+npm.cmd run proc -- start all
+npm.cmd run proc -- status
+npm.cmd run proc -- stop receiver-worker
+npm.cmd run proc -- start relay --marker=after_http_2xx_before_delivery_commit
+npm.cmd run proc -- kill relay
+npm.cmd run proc -- stop all
 ```
 
-## Gọi API
+Hoặc qua Docker Compose (4 container độc lập + PostgreSQL):
 
 ```powershell
-$body = @{video_id='V1'; options=@{language='vi'; style='short'}} | ConvertTo-Json
-$job = Invoke-RestMethod http://127.0.0.1:3000/summaries -Method Post -ContentType application/json -Body $body
-Invoke-RestMethod "http://127.0.0.1:3000$($job.status_url)"
-Invoke-RestMethod "http://127.0.0.1:3000/summaries/$($job.job_id)/attempts"
-Invoke-RestMethod http://127.0.0.1:3000/videos/V1/summary
-Invoke-RestMethod "http://127.0.0.1:3001/calls/$($job.job_id)"
-```
-
-| Route                             | Ý nghĩa                                                                                                                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /videos`, `POST /videos`     | Xem danh sách hoặc thêm mới video/transcript động để Gemini tóm tắt.                                                                                                            |
-| `POST /summaries`                 | Nhận `{video_id, options}`. Commit job QUEUED + version, publish persistent, chờ confirm rồi trả 202 + `job_id`, `message_id`, `status_url`. Trả 503 nếu broker không xác nhận. |
-| `GET /summaries/:job_id`          | Trạng thái QUEUED / DONE / DEAD_LETTERED và bản tóm tắt nếu có.                                                                                                                 |
-| `GET /summaries/:job_id/attempts` | Số lần xử lý, worker, redelivered, thời điểm và outcome/error_type.                                                                                                             |
-| `GET /videos/:video_id/summary`   | Bản có version lớn nhất đã DONE.                                                                                                                                                |
-| `POST /dlq/:message_id/replay`    | Lấy khỏi DLQ, giữ message_id, đổi QUEUED, ghi replay_events và gửi lại.                                                                                                         |
-| `GET /health`                     | Health API (DB + broker + trạng thái cấu hình Gemini LLM). Worker có `/health` cổng 3002 bên trong container.                                                                   |
-| llm: `GET /health`                | Health LLM service, provider (`gemini`/`mock`), model và trạng thái API key.                                                                                                    |
-| llm: `GET /calls/:job_id`         | Bộ đếm, lịch sử gọi thực trong PostgreSQL.                                                                                                                                      |
-| llm: `PUT /faults/:job_id`        | Đổi/gỡ fault; body `{}` để gỡ. Chỉ có khi LAB_MODE=true.                                                                                                                        |
-
-Thử lỗi 429 hai lần đầu:
-
-```powershell
-$body = @{video_id='V1'; options=@{mock=@{status=429; fail_first=2; delay_ms=100}}} | ConvertTo-Json -Depth 5
-Invoke-RestMethod http://127.0.0.1:3000/summaries -Method Post -ContentType application/json -Body $body
-```
-
-RabbitMQ Management: <http://127.0.0.1:15678>, tài khoản lab `lab` / `lab`. Tất cả port publish chỉ bind `127.0.0.1`; health của worker không publish ra host. Container dùng `0.0.0.0` để các service liên lạc trong mạng Compose. Các credential và endpoint fault/replay chỉ phục vụ lab cục bộ.
-
-## Bốn phiên bản
-
-Cùng mã nguồn, chọn bằng `APP_VERSION` trong `.env`, rồi `docker compose up -d --force-recreate api worker-1 worker-2`. Mặc định V3, bao gồm các tính năng trước đó.
-
-| Version | Hành vi                                                                                                                                            |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| V0      | API gọi mock đồng bộ, commit rồi trả 200. B0 tạo API V0 riêng ở loopback 3010, đo 5 request nối tiếp rồi đo 5 request V3 với cùng độ trễ mock.     |
-| V1      | Publisher confirm, manual ack sau commit, 2 worker prefetch=1, lưu attempts, UNIQUE(job_id), kiểm soát version. Chưa retry lỗi tạm thời. H0/H1/F7. |
-| V2      | Thêm retry TTL 1/3/9 giây, tối đa 4 lần mỗi lượt xử lý/replay, phân loại lỗi, DLQ, replay. F2/F3/F4.                                               |
-| V3      | Thêm checkpoint persist và pause tại marker cho SIGKILL thật; restart broker, F1/F5/F6/F8.                                                         |
-
-## Cấu trúc source
-
-```text
-src/
-  api.js          HTTP contract, V0 baseline, DLQ replay, CRUD videos
-  worker.js       consumer, idempotency, retry/DLQ, reconnect
-  gemini.js       Google Gemini API client (@google/genai Interactions API)
-  mock-llm.js     LLM gateway (Gemini thật / fault injection & bộ đếm bền vững)
-  broker.js       durable topology + persistent publish/confirm/mandatory
-  processing.js   attempts, checkpoints, mock call, transaction kết quả
-  db.js           pool, transaction và advisory lock theo job
-  domain.js       validation, message envelope, phân loại lỗi
-  config.js       queue, policy và cấu hình
-db/001-init.sql   schema, ràng buộc, seed V1/V7/V9
-scripts/          test tích hợp, demo SIGKILL, B0, snapshot chứng cứ
-test/             unit tests
-docs/             kiến trúc, kịch bản, tham khảo, báo cáo thực chạy
-evidence/         snapshot JSON và kết quả đo
-compose.yaml      API + 2 worker + mock + RabbitMQ + PostgreSQL
-```
-
-Xem [kiến trúc](docs/ARCHITECTURE.md), [ma trận kiểm thử và demo](docs/TESTING.md), [báo cáo thực chạy](docs/REPORT.md), [nguồn tham khảo](docs/REFERENCES.md). File `requests.http` có mẫu gọi dành cho VS Code REST Client.
-
-## Dừng hệ thống
-
-```powershell
+docker compose up -d --build --wait
+docker compose stop receiver-worker
+docker compose kill -s SIGKILL relay
+docker compose up -d relay receiver-worker
 docker compose down
 ```
 
-Volume giữ DB/broker qua lần chạy. Chỉ khi muốn xóa toàn bộ dữ liệu lab: `docker compose down -v`. Init SQL chỉ chạy khi volume PostgreSQL mới; các test tự reset nội dung qua SQL, không cần xóa volume.
+## Giao diện Demo Console 100% trên web (không cần gõ lệnh khi trình bày)
 
-## Giao diện web
+Chỉ cần khởi động PostgreSQL và bật Demo Console 1 lần:
 
-Mở http://127.0.0.1:3000 sau khi chạy Docker Compose. Giao diện hỗ trợ tạo job, gửi batch 20 job, cấu hình mock, theo dõi queue, xem kết quả và attempts, gỡ fault và replay DLQ. Chọn checkpoint để dừng worker tại marker; thực hiện SIGKILL thật qua terminal theo TESTING.md.
+```powershell
+docker compose up -d postgres --wait
+npm.cmd run ui
+```
+
+Sau đó mở **<http://127.0.0.1:4200>** trên trình duyệt để demo **toàn bộ H0 và F1–F10 ngay trên web** (không cần PowerShell trong lúc demo):
+- **Điều khiển thật 4 tiến trình** (`sender-api`, `relay`, `receiver-api`, `receiver-worker`): bấm **`▶ Start`** (chọn marker tùy ý), **`⏹ Stop`**, **`Kill -9` (`SIGKILL` thật)** và xem **`Logs`** trực tiếp trên từng thẻ.
+- **Demo có hướng dẫn cho các ca Kill thật (`F1`, `F2`, `F3`, `F7`) & `F10`:** 1 bấm để dừng đúng tại marker → tự tay bấm **Kill -9** quan sát trạng thái 2 DB giữa crash → bấm **Restart & Phục hồi**.
+- **Demo `H0`, `F4`, `F5`, `F6`, `F8` (`503 → DEAD → Replay`), `F9` (`v2` trước `v1` sau), `429 Retry-After`, `301` không redirect, `Timeout 2s`**.
+- **Nút `Chạy tất cả 11 ca`** chạy luôn harness chính thức (`H0`, `F1–F10`), hiện bảng kết quả đo ngay trên web và cập nhật `evidence/verification.json` + `docs/REPORT.md`.
+
+*(Lưu ý: `src/lab-ui.js` là giao diện cho harness/process-controller trên loopback; 4 tiến trình nghiệp vụ vẫn tách biệt độc lập với 2 DB `sender_db` và `receiver_db` đúng yêu cầu Block 9.)*
+
+## Cấu trúc thư mục
+
+```text
+db/
+  init/001-create-databases.sql   Tạo 2 DB độc lập: sender_db & receiver_db
+  sender/001_schema.sql           Schema DB sender (jobs, outbox, delivery_attempts, replay_events)
+  sender/002_fixtures.sql         Fixture J42 (V7 v1) & J43 (V7 v2)
+  receiver/001_schema.sql         Schema DB receiver (inbox UNIQUE(source, event_id), video_summaries)
+src/
+  sender-api.js                   Process 1: Sender HTTP API (transaction outbox, replay)
+  relay.js                        Process 2: Single Relay (STARTED->UNKNOWN recovery, retry 1/3/9s, 2s timeout, no redirect)
+  receiver-api.js                 Process 3: Receiver HTTP API (raw body HMAC, inbox commit trước 202)
+  receiver-worker.js              Process 4: Receiver Worker (FOR UPDATE SKIP LOCKED, UPSERT version > current, PROCESSED)
+  crypto.js                       Ký và xác minh HMAC-SHA256 constant-time + cửa sổ 300s
+  protocol.js                     Payload builder, schema validator, HTTP classifier, Retry-After & backoff
+  db.js                           Pool độc lập cho sender_db & receiver_db + withTransaction
+  marker.js                       Điểm dừng marker xác định cho real SIGKILL
+  config.js                       Cấu hình loopback & policy lab
+scripts/
+  migrate.js                      Tạo DB, chạy migration, seed/reset fixture
+  process-ctl.js                  Start / stop / kill (SIGKILL) / status / logs từng process
+  harness.js                      Harness tự động H0 & F1–F10 (real SIGKILL + 2-DB snapshot)
+  snapshot.js                     Chụp snapshot đồng thời cả sender_db và receiver_db
+  report.js                       Sinh docs/REPORT.md từ bằng chứng đo thật trong evidence/
+test/unit.test.js                 Unit tests cho crypto, schema, classifier, Retry-After, backoff
+docs/                             ARCHITECTURE.md, TESTING.md, REPORT.md, REFERENCES.md
+evidence/                         Snapshot JSON hai DB & verification.json (H0, F1–F10)
+```
+
+Xem chi tiết tại [ARCHITECTURE.md](docs/ARCHITECTURE.md), [TESTING.md](docs/TESTING.md), [REPORT.md](docs/REPORT.md) và [REFERENCES.md](docs/REFERENCES.md).

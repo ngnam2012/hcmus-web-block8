@@ -1,55 +1,104 @@
-# Thiết kế và giới hạn
+# Kiến trúc & Ranh giới Transaction — Block 9
 
-## Luồng chính
+Hệ thống giao kết quả tóm tắt video qua webhook tin cậy theo mô hình **Transactional Outbox + Single Relay + HMAC-SHA256 + Durable Inbox + Receiver Worker**.
+
+## 1. Sơ đồ hai DB, 4 tiến trình và ranh giới Transaction
 
 ```mermaid
 flowchart LR
-    C[Client] -->|POST /summaries| A[API]
-    A -->|1. Commit QUEUED, version| P[(PostgreSQL)]
-    A -->|2. Persistent + publisher confirm| Q[(RabbitMQ main)]
-    A -->|3. 202 + status_url| C
-    Q -->|prefetch 1; manual ack| W1[Worker 1]
-    Q -->|prefetch 1; manual ack| W2[Worker 2]
-    W1 & W2 --> M[LLM Gateway / Gemini]
-    W1 & W2 -->|Commit summary, DONE, SUCCEEDED| P
-    W1 & W2 -->|Ack sau commit| Q
-    W1 & W2 -->|Transient + confirm| R[TTL retry 1s / 3s / 9s]
-    R -->|DLX về queue chính| Q
-    W1 & W2 -->|Permanent / hết lượt| D[(DLQ)]
-    A -->|Replay cùng message_id| D
+    Client["Client / Harness"] -->|POST /jobs/:job_id/complete| SAPI["Sender API (port 4000)"]
+
+    subgraph SenderDB["DB 1: sender_db (độc lập)"]
+        Jobs[("jobs (READY -> DONE)")]
+        Outbox[("outbox (PENDING / DELIVERED / DEAD)")]
+        Attempts[("delivery_attempts (STARTED / ACKNOWLEDGED / RETRYABLE / REJECTED / UNKNOWN)")]
+        Replays[("replay_events")]
+    end
+
+    SAPI -->|"Tx Sender: FOR UPDATE jobs + UPDATE DONE + INSERT outbox -> COMMIT -> 200"| SenderDB
+    Relay["Relay (1 process)"] -->|"Tx 1: INSERT attempt STARTED -> COMMIT"| SenderDB
+    Relay -->|"HTTP POST /webhooks/summaries (ngoài transaction, timeout 2s, no redirect, HMAC raw body)"| RAPI["Receiver API (port 4100)"]
+    RAPI -->|"202 Accepted (sau COMMIT inbox)"| Relay
+    Relay -->|"Tx 2: UPDATE attempt + UPDATE outbox DELIVERED/PENDING/DEAD -> COMMIT"| SenderDB
+
+    subgraph ReceiverDB["DB 2: receiver_db (độc lập)"]
+        Inbox[("inbox UNIQUE(source, event_id) (RECEIVED -> PROCESSED)")]
+        Summaries[("video_summaries (version, applied_count)")]
+    end
+
+    RAPI -->|"Tx Receiver API: verify timestamp ±300s & HMAC -> parse/schema -> INSERT inbox -> COMMIT -> 202"| ReceiverDB
+    Worker["Receiver Worker"] -->|"Tx Worker: FOR UPDATE SKIP LOCKED inbox -> UPSERT WHERE new_version > cur -> UPDATE PROCESSED -> COMMIT"| ReceiverDB
+    Client -->|GET /videos/:video_id/summary| RAPI
 ```
 
-## Tám quy tắc của bài học
+### Tách biệt hai DB logic
 
-1. Queue durable, message persistent, chờ confirm trước 202. `mandatory=true` phát hiện routing thất bại. Confirm có timeout 3 giây; AMQP connect có timeout. Mỗi publish dùng confirm channel riêng để không lẫn callback/return của các request đồng thời.
-2. `noAck=false`, commit kết quả và job DONE rồi mới ack. Broker giao lại unacked khi channel/process mất.
-3. Advisory lock PostgreSQL theo `job_id` bao quanh một lần xử lý, kể cả lời gọi mock. Khi SIGKILL, DB tự giải phóng lock. Nhận lại job DONE: ghi DUPLICATE, ack, không gọi mock. `UNIQUE(summaries.job_id)` là hàng rào cuối; cờ redelivered chỉ là bằng chứng giao lại, không quyết định nghiệp vụ.
-4. Lỗi transient được publish confirmed vào retry queue riêng TTL 1000/3000/9000 ms rồi mới ack message nguồn. TTL hết, DLX đưa về main. Không dùng sleep trong RAM để retry nghiệp vụ, không nack requeue ngay cho 429/503.
-5. Lỗi vĩnh viễn như NO_AUDIO đi DLQ ngay. 429/5xx/network/timeout là transient; HTTP 4xx khác là permanent. Quyết định bằng status/error_type. Tối đa 4 attempts trong một replay generation, số đếm truy vấn từ DB. Tổng attempt_no của message luôn tăng, kể cả sau replay. CRASHED cũng tính là một lần xử lý.
-6. DLQ lưu envelope nguyên và headers error_type, attempt_count, correlation_id. Replay scan bằng basic.get/manual ack, giữ các message không khớp unacked rồi đóng channel để requeue; serialize scan bằng advisory lock. Bản lab scan O(n), phù hợp queue nhỏ; hệ thống lớn cần chỉ mục/quy trình vận hành khác. `replay_events` lưu generation/thời điểm; không thay message_id.
-7. Hai consumer cùng main queue, prefetch=1. Mỗi process xử lý một delivery tại một thời điểm, broker phân phối công việc. Hai job khác nhau có thể gọi mock đồng thời.
-8. Version cấp bằng `UPDATE videos SET next_version=next_version+1 RETURNING` trong cùng transaction tạo job. Khi commit: `UPDATE videos ... WHERE current_version < new_version`. Cả hai summary được lưu, bản hiện tại không lùi version khi job cũ xong sau.
+- `sender_db` chỉ được truy cập bởi `sender-api` và `relay` (`SENDER_DATABASE_URL`).
+- `receiver_db` chỉ được truy cập bởi `receiver-api` và `receiver-worker` (`RECEIVER_DATABASE_URL`).
+- Không tồn tại transaction nào xuyên qua hai DB hoặc bao quanh lời gọi HTTP giữa hai hệ thống.
 
-## Mô hình dữ liệu
+## 2. Vị trí trả `200`, trả `202` và đánh dấu `DELIVERED` / `PROCESSED`
 
-`videos` chứa transcript seed (đại diện video đã upload), has_audio, version counter và con trỏ bản hiện tại. `jobs` chứa yêu cầu và replay_count. `summaries` UNIQUE(job_id). `processing_attempts` ghi `message_id`, số thứ tự, generation, worker_id, redelivered, started_at, finished_at, outcome và error_type.
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant SA as Sender API
+    participant SDB as sender_db
+    participant RL as Relay
+    participant RA as Receiver API
+    participant RDB as receiver_db
+    participant RW as Receiver Worker
 
-Outcome `NULL` nghĩa là **đang xử lý**, không phải kết quả cuối thứ sáu. Khi delivery tiếp theo giành được job lock, attempt dở được đóng thành CRASHED. Không suy diễn process chết chỉ từ timeout. Bằng chứng tại thời điểm process đang tắt vẫn có attempt outcome NULL; snapshot sau recovery mới có CRASHED. F5 khác: SUCCEEDED đã commit nên không đổi thành CRASHED.
+    C->>SA: POST /jobs/J42/complete
+    SA->>SDB: BEGIN; SELECT J42 FOR UPDATE; UPDATE DONE; INSERT outbox E42 PENDING; COMMIT
+    Note over SA: Trả 200 CHỈ SAU COMMIT (F1/F2)
+    SA-->>C: 200 { job_id: J42, event_id: E42 }
 
-`mock_calls` ghi durable trước khi gọi LLM và cập nhật `response_status`/`finished_at` khi xong; do đó worker crash/HTTP timeout không làm mất bộ đếm. Ở chế độ mặc định (`LLM_PROVIDER=gemini`), service tại cổng 3001 gọi Google Gemini API qua `@google/genai` (`interactions.create`) dùng `GEMINI_API_KEY` từ Google AI Studio (mặc định `gemini-3.5-flash-lite`, timeout `LLM_TIMEOUT_MS=15000` ms). Trong `LAB_MODE=true`, bảng `mock_faults` cho phép tiêm lỗi có kiểm soát (`429`, `503`, `timeout`, `delay_ms`) phục vụ kiểm thử F2/F4/F7/timeout mà không lãng phí quota Gemini. Có thể chuyển `LLM_PROVIDER=mock` khi chạy kiểm thử tải offline.
+    RL->>SDB: Tx 1: INSERT delivery_attempts A1 STARTED; COMMIT
+    Note over RL,RA: Không giữ transaction DB mở khi chờ HTTP
+    RL->>RA: POST /webhooks/summaries (raw_body bất biến + HMAC mới + timeout 2s)
+    RA->>RA: Kiểm tra abs(now-ts) <= 300s, HMAC constant-time trên raw body, rồi mới parse & kiểm schema
+    RA->>RDB: BEGIN; INSERT inbox E42 RECEIVED ON CONFLICT DO NOTHING; COMMIT
+    Note over RA: Trả 202 CHỈ SAU COMMIT inbox (F4/F6)
+    RA-->>RL: 202 Accepted
+    RL->>SDB: Tx 2: UPDATE A1 ACKNOWLEDGED; UPDATE outbox E42 DELIVERED; COMMIT
+    Note over RL: Đánh dấu DELIVERED CHỈ SAU 2xx (F3)
 
-Message `SummarizeVideo`: message_id, job_id, video_id, version, correlation_id, created_at, options. Không chứa binary/video/transcript. Metadata message AMQP cũng có messageId/correlationId/type/contentType.
+    RW->>RDB: BEGIN; SELECT inbox FOR UPDATE SKIP LOCKED; UPSERT video_summaries WHERE new > cur; UPDATE inbox PROCESSED; COMMIT
+    Note over RW: PROCESSED và nghiệp vụ cùng COMMIT (F7/F9/F10)
+```
 
-## Ba khoảng hở và phạm vi cam kết
+Ý nghĩa bốn trạng thái (không đồng nhất với nhau):
 
-**Gap 1 — DB commit, chưa publish:** API chết hoặc broker không nhận sau khi đã ghi QUEUED. F6 cố ý giữ lại orphan: 503, QUEUED, không attempt, không message. Không thêm outbox/retry RAM để giấu ca này; outbox thuộc block sau. 503/confirm timeout cũng có thể là kết quả không rõ ràng: broker có thể đã nhận nhưng xác nhận không tới; client gửi lại có thể tạo job mới. Chưa có HTTP idempotency key.
+| Trạng thái | Nơi lưu | Chứng minh điều gì | Không chứng minh điều gì |
+| --- | --- | --- | --- |
+| `DONE` | `sender_db.jobs` | Job đã commit cùng 1 dòng `outbox PENDING` | Receiver đã nhận sự kiện |
+| `DELIVERED` | `sender_db.outbox` | Receiver đã trả `2xx` (đã commit `inbox`) | `video_summaries` đã cập nhật (worker có thể đang tắt — F10) |
+| `RECEIVED` | `receiver_db.inbox` | Đã qua xác thực HMAC/timestamp/schema và commit bền vững | Sender đã kịp ghi `DELIVERED` (F3, F4) hoặc worker đã chạy |
+| `PROCESSED` | `receiver_db.inbox` | Đã chạy UPSERT có điều kiện version và commit cùng dấu xử lý | Side effect ngoài DB (email/LLM) chỉ xảy ra một lần |
 
-**Gap 2 — DEAD_LETTERED commit, chưa đưa DLQ:** nếu unacked delivery được giao lại, worker thấy DEAD_LETTERED và xuất lại DLQ rồi ack. Không có transaction nguyên tử giữa DB và RabbitMQ. Crash sau publish confirmed nhưng trước ack có thể tạo hai bản message (kể cả retry/DLQ/replay); việc nghiệp vụ vẫn dùng DB idempotency, nhưng broker không hứa exactly-once. Replay không phải transaction phân tán: crash quanh publish/commit có thể để lại message trùng hoặc DLQ chưa ack. Lab không tuyên bố xóa mọi bản trùng vật lý trong các cửa sổ này.
+## 3. Bản đồ mã nguồn tại 4 điểm kiểm tra trọng tâm
 
-**Gap 3 — LLM thành công, trước DB commit:** F8 tạo hai lần gọi mock nhưng chỉ một summary. UNIQUE(job_id) không hủy được lời gọi bên ngoài đã xảy ra. Không tuyên bố exactly-once cho LLM.
+Để mở nhanh khi trình bày:
 
-Retry dùng classic durable queues và TTL/DLX. RabbitMQ DLX mặc định có cửa sổ mất message nếu đích không nhận được; một node/volume không thay thế HA/quorum hoặc backup. F6 kiểm chứng restart broker với dữ liệu còn trên cùng volume, không chứng minh chịu được mất disk. Triển khai thực cần quorum + at-least-once dead lettering và outbox/inbox tùy phạm vi. Chỉ số đo thực trong `evidence/` được dùng làm kết luận lab.
+1. **Transaction của Outbox (Quy tắc 1):** [src/sender-api.js](../src/sender-api.js) — route `POST /jobs/:job_id/complete` (`withTransaction`: `FOR UPDATE` job → `UPDATE DONE` → marker `after_job_update_before_outbox` → serialize `raw_body` 1 lần → `INSERT outbox` → `COMMIT` → marker `after_sender_commit_before_response` → trả `200`).
+2. **Phép kiểm chữ ký HMAC trên raw body (Quy tắc 4):** [src/crypto.js](../src/crypto.js) (`signWebhook`, `verifyWebhookSignature` với `timingSafeEqual` trên `UTF8(ts + ".") || raw_body_bytes`, cửa sổ `±300s` cả quá khứ lẫn tương lai) và [src/receiver-api.js](../src/receiver-api.js) (dùng `express.raw({ type: '*/*' })` trước khi parse JSON).
+3. **Chỗ lưu Inbox trước khi trả `202` (Quy tắc 5):** [src/receiver-api.js](../src/receiver-api.js) — route `POST /webhooks/summaries` (`withTransaction`: `INSERT INTO inbox ... ON CONFLICT (source, event_id) DO NOTHING`, so sánh `payload_hash` + `raw_body` cho bản sao `202` vs xung đột `409`, `COMMIT` rồi mới kiểm marker F4 và trả `202`).
+4. **Transaction của Receiver Worker (Quy tắc 6):** [src/receiver-worker.js](../src/receiver-worker.js) — `processNextInboxEvent` (`FOR UPDATE SKIP LOCKED` → `INSERT INTO video_summaries ... ON CONFLICT DO UPDATE ... WHERE EXCLUDED.version > video_summaries.version` → marker `after_projection_write_before_commit` → `UPDATE inbox SET status = 'PROCESSED'` → `COMMIT`).
 
-## Tổ chức phiên bản
+## 4. Bảy quy tắc và cơ chế chi tiết
 
-APP_VERSION=V0 chọn xử lý đồng bộ trên API. V1 có queue, idempotency, version; lỗi được đóng vào DLQ để không kẹt, chưa retry. V2 bật retry/replay. V3 bật checkpoint pause. Dùng chung module để phần cải tiến dễ đối chiếu, không nhân bản bốn thư mục source. LAB_MODE trong Compose cho phép cấu hình mock; ngoài lab, options fault/pause bị chặn, route sửa fault trả 404.
+1. **Nguyên tử Sender (F1, F2):** `UPDATE jobs` và `INSERT outbox` cùng transaction; gọi lại `complete` cho job `DONE` trả cùng `event_id` nhờ khóa dòng và `UNIQUE(outbox.job_id)`.
+2. **Ba đoạn của một lần gửi (F3):** `STARTED` commit trước HTTP; không giữ DB transaction trong lúc gọi mạng; kết quả attempt và trạng thái outbox commit chung ở Transaction 2; restart relay đóng mọi dòng `STARTED` sang `UNKNOWN` và tính vào số lượt đã dùng.
+3. **Retry & Replay (F4, F8):** Timeout 2 giây, `redirect: 'manual'` (không theo redirect). `2xx` → `DELIVERED`. Timeout / lỗi kết nối / `429` / `5xx` → `RETRYABLE`, tối đa 4 lần mỗi vòng, backoff `1 / 3 / 9` giây lưu bền vững ở `next_attempt_at` (với `429`, tôn trọng `Retry-After` nếu lớn hơn backoff). `3xx` và `4xx` khác → `REJECTED` → `DEAD` ngay. Replay chỉ nhận `DEAD` (trạng thái khác trả `409`), giữ nguyên `event_id` và `raw_body`, mở vòng mới, ghi `replay_events`, tạo timestamp & chữ ký mới.
+4. **Xác thực HMAC & Timestamp (F5):** Kiểm `abs(now - timestamp) <= 300` (cả cũ lẫn tương lai) và HMAC constant-time trên raw body trước khi parse JSON (`401`); sau đó mới parse & kiểm schema (`400`). `source` gắn cố định với secret cấu hình ở receiver, không đọc từ header tùy ý.
+5. **Nhận bền vững & Chống trùng (F4, F6):** `PRIMARY KEY (source, event_id)` bảo vệ trước bản sao tuần tự và đồng thời; cùng ID cùng raw body trả `202`, cùng ID khác raw body trả `409`.
+6. **Xử lý nguyên tử & Version không giảm (F7, F9):** Worker khóa dòng inbox, chỉ tăng `applied_count` khi `EXCLUDED.version > video_summaries.version`, đánh dấu `PROCESSED` trong cùng transaction.
+7. **Tách `DELIVERED` khỏi `PROCESSED` (F10):** Sender chỉ biết receiver đã lưu inbox; trạng thái xử lý nghiệp vụ phải kiểm ở `GET /inbox/:event_id` hoặc `GET /videos/:video_id/summary`.
+
+## 5. Giới hạn (không tuyên bố exactly-once đầu cuối)
+
+- **Một relay duy nhất:** Lab chạy 1 process relay, không dùng lease/distributed lock; chạy nhiều relay song song trên cùng `sender_db` chưa nằm trong phạm vi.
+- **Retry hữu hạn:** Sau 4 lần lỗi liên tiếp trong vòng, sự kiện chuyển `DEAD` (không xóa dữ liệu) và cần vận hành xử lý nguyên nhân rồi gọi replay.
+- **Chống lặp chỉ trong DB receiver:** Giao dịch cục bộ đảm bảo `video_summaries` không áp dụng lặp, nhưng không thể thu hồi hay đảm bảo exactly-once cho side effect ngoài DB (như gửi email hoặc gọi LLM).
+- **Không dùng broker/CDC:** Endpoint cố định qua cấu hình loopback, không theo redirect, route quản trị (`replay`, `_lab/*`) chỉ mở trên loopback (Demo Console web `src/lab-ui.js` chỉ là công cụ phụ trợ tách biệt để điều khiển harness/demo).

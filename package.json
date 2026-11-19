@@ -1,5 +1,5 @@
 {
-  "name": "hcmus-web-block8",
+  "name": "hcmus-web-block9",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -7,21 +7,22 @@
     "node": ">=22"
   },
   "scripts": {
-    "api": "node src/api.js",
-    "worker": "node src/worker.js",
-    "mock": "node src/mock-llm.js",
-    "llm": "node src/mock-llm.js",
+    "ui": "node --env-file-if-exists=.env src/lab-ui.js",
+    "sender-api": "node --env-file-if-exists=.env src/sender-api.js",
+    "relay": "node --env-file-if-exists=.env src/relay.js",
+    "receiver-api": "node --env-file-if-exists=.env src/receiver-api.js",
+    "receiver-worker": "node --env-file-if-exists=.env src/receiver-worker.js",
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.js",
+    "seed": "node --env-file-if-exists=.env scripts/migrate.js --reset",
+    "proc": "node --env-file-if-exists=.env scripts/process-ctl.js",
     "test": "node --test test/unit.test.js",
-    "test:integration": "node --env-file-if-exists=.env scripts/scenarios.js automated",
-    "demo": "node --env-file-if-exists=.env scripts/scenarios.js demos",
-    "verify": "node --env-file-if-exists=.env scripts/scenarios.js all",
-    "benchmark": "node --env-file-if-exists=.env scripts/scenarios.js B0",
+    "verify": "node --env-file-if-exists=.env scripts/harness.js all",
+    "verify:automated": "node --env-file-if-exists=.env scripts/harness.js automated",
+    "verify:kills": "node --env-file-if-exists=.env scripts/harness.js kills",
     "snapshot": "node --env-file-if-exists=.env scripts/snapshot.js",
     "report": "node --env-file-if-exists=.env scripts/report.js"
   },
   "dependencies": {
-    "@google/genai": "^3.3.0",
-    "amqplib": "0.10.9",
     "express": "5.1.0",
     "pg": "8.16.3"
   }

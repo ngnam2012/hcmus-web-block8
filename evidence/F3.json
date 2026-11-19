@@ -1,122 +1,107 @@
 {
   "label": "F3",
-  "captured_at": "2026-11-16T15:08:22.079Z",
-  "tables": {
-    "videos": [
-      {
-        "video_id": "V1",
-        "title": "Message Broker",
-        "transcript": "Broker nhận công việc qua publisher confirm, worker ack sau commit.",
-        "has_audio": true,
-        "next_version": 0,
-        "current_version": 0,
-        "current_summary_id": null
-      },
-      {
-        "video_id": "V7",
-        "title": "Ordering",
-        "transcript": "Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
-        "has_audio": true,
-        "next_version": 0,
-        "current_version": 0,
-        "current_summary_id": null
-      },
-      {
-        "video_id": "V9",
-        "title": "No audio",
-        "transcript": "",
-        "has_audio": false,
-        "next_version": 1,
-        "current_version": 0,
-        "current_summary_id": null
-      }
-    ],
+  "captured_at": "2026-11-19T15:45:00.009Z",
+  "sender_db": {
     "jobs": [
       {
-        "job_id": "b644a584-30b6-41b7-9e94-dc1dd750d5ab",
-        "message_id": "e1e06ee0-610a-4bef-a28e-d40c392a1fa2",
-        "video_id": "V9",
+        "job_id": "J42",
+        "video_id": "V7",
         "version": 1,
-        "correlation_id": "1606138e-3308-4298-a196-38679c32087c",
-        "options": {},
-        "status": "DEAD_LETTERED",
-        "replay_count": 0,
-        "last_error_type": "NO_AUDIO",
-        "created_at": "2026-11-16T15:08:21.525Z",
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+        "status": "DONE",
+        "created_at": "2026-11-19T15:44:57.541Z",
+        "completed_at": "2026-11-19T15:44:58.583Z"
+      },
+      {
+        "job_id": "J43",
+        "video_id": "V7",
+        "version": 2,
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 2, job J43).",
+        "status": "READY",
+        "created_at": "2026-11-19T15:44:57.542Z",
         "completed_at": null
       }
     ],
-    "summaries": [],
-    "processing_attempts": [
+    "outbox": [
       {
-        "attempt_id": "1",
-        "job_id": "b644a584-30b6-41b7-9e94-dc1dd750d5ab",
-        "message_id": "e1e06ee0-610a-4bef-a28e-d40c392a1fa2",
-        "attempt_no": 1,
-        "replay_generation": 0,
-        "worker_id": "worker-2",
-        "redelivered": false,
-        "started_at": "2026-11-16T15:08:21.707Z",
-        "finished_at": "2026-11-16T15:08:21.713Z",
-        "outcome": "PERMANENT_ERROR",
-        "error_type": "NO_AUDIO"
+        "event_id": "E42",
+        "job_id": "J42",
+        "event_type": "summary.completed",
+        "schema_version": 1,
+        "raw_body": "{\"event_id\":\"E42\",\"type\":\"summary.completed\",\"schema_version\":1,\"occurred_at\":\"2026-11-19T15:44:58.583Z\",\"data\":{\"job_id\":\"J42\",\"video_id\":\"V7\",\"version\":1,\"summary\":\"Nội dung tóm tắt giả định của video V7 (version 1, job J42).\"}}",
+        "status": "DELIVERED",
+        "replay_round": 1,
+        "next_attempt_at": null,
+        "created_at": "2026-11-19T15:44:58.585Z",
+        "delivered_at": "2026-11-19T15:44:59.923Z",
+        "dead_at": null,
+        "last_error": null
       }
     ],
-    "replay_events": [],
-    "checkpoint_events": [],
-    "mock_calls": [],
-    "mock_faults": []
-  },
-  "queues": [
-    {
-      "name": "summaries.main",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    },
-    {
-      "name": "summaries.retry.1000",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    },
-    {
-      "name": "summaries.dlq",
-      "messages_unacknowledged": 0,
-      "messages_ready": 1
-    },
-    {
-      "name": "summaries.retry.3000",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    },
-    {
-      "name": "summaries.retry.9000",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    }
-  ],
-  "dlq_messages": [
-    {
-      "properties": {
-        "contentType": "application/json",
-        "headers": {
-          "attempt_count": 1,
-          "correlation_id": "1606138e-3308-4298-a196-38679c32087c",
-          "error_type": "NO_AUDIO"
-        },
-        "deliveryMode": 2,
-        "correlationId": "1606138e-3308-4298-a196-38679c32087c",
-        "messageId": "e1e06ee0-610a-4bef-a28e-d40c392a1fa2",
-        "type": "SummarizeVideo"
+    "delivery_attempts": [
+      {
+        "attempt_seq": "1",
+        "attempt_id": "A1",
+        "event_id": "E42",
+        "round": 1,
+        "attempt_in_round": 1,
+        "started_at": "2026-11-19T15:44:58.653Z",
+        "finished_at": "2026-11-19T15:44:58.829Z",
+        "http_status": null,
+        "outcome": "UNKNOWN",
+        "error_detail": "RELAY_RESTART_RECOVERY"
       },
-      "message": {
-        "message_id": "e1e06ee0-610a-4bef-a28e-d40c392a1fa2",
-        "job_id": "b644a584-30b6-41b7-9e94-dc1dd750d5ab",
-        "video_id": "V9",
-        "version": 1,
-        "correlation_id": "1606138e-3308-4298-a196-38679c32087c",
-        "created_at": "2026-11-16T15:08:21.525Z",
-        "options": {}
+      {
+        "attempt_seq": "2",
+        "attempt_id": "A2",
+        "event_id": "E42",
+        "round": 1,
+        "attempt_in_round": 2,
+        "started_at": "2026-11-19T15:44:59.895Z",
+        "finished_at": "2026-11-19T15:44:59.923Z",
+        "http_status": 202,
+        "outcome": "ACKNOWLEDGED",
+        "error_detail": null
       }
-    }
-  ]
+    ],
+    "replay_events": []
+  },
+  "receiver_db": {
+    "inbox": [
+      {
+        "source": "sender-lab",
+        "event_id": "E42",
+        "event_type": "summary.completed",
+        "schema_version": 1,
+        "raw_body": "{\"event_id\":\"E42\",\"type\":\"summary.completed\",\"schema_version\":1,\"occurred_at\":\"2026-11-19T15:44:58.583Z\",\"data\":{\"job_id\":\"J42\",\"video_id\":\"V7\",\"version\":1,\"summary\":\"Nội dung tóm tắt giả định của video V7 (version 1, job J42).\"}}",
+        "payload_hash": "ca853eeeba9671bc6249a486edc5c662a4ad867da9d9eadc437f3637cb800ebd",
+        "payload": {
+          "data": {
+            "job_id": "J42",
+            "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+            "version": 1,
+            "video_id": "V7"
+          },
+          "type": "summary.completed",
+          "event_id": "E42",
+          "occurred_at": "2026-11-19T15:44:58.583Z",
+          "schema_version": 1
+        },
+        "status": "PROCESSED",
+        "received_at": "2026-11-19T15:44:58.673Z",
+        "processed_at": "2026-11-19T15:44:58.682Z",
+        "last_delivery_attempt": "A1"
+      }
+    ],
+    "video_summaries": [
+      {
+        "video_id": "V7",
+        "version": 1,
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+        "applied_count": 1,
+        "source_event_id": "E42",
+        "updated_at": "2026-11-19T15:44:58.680Z"
+      }
+    ]
+  }
 }

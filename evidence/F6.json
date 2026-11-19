@@ -1,297 +1,67 @@
 {
   "label": "F6",
-  "captured_at": "2026-11-16T15:09:15.460Z",
-  "tables": {
-    "videos": [
-      {
-        "video_id": "V1",
-        "title": "Message Broker",
-        "transcript": "Broker nhận công việc qua publisher confirm, worker ack sau commit.",
-        "has_audio": true,
-        "next_version": 6,
-        "current_version": 5,
-        "current_summary_id": "f7c9c1f0-5651-429f-aa39-6d61f47f7e3d"
-      },
-      {
-        "video_id": "V7",
-        "title": "Ordering",
-        "transcript": "Version lớn nhất đã DONE là bản tóm tắt hiện tại.",
-        "has_audio": true,
-        "next_version": 0,
-        "current_version": 0,
-        "current_summary_id": null
-      },
-      {
-        "video_id": "V9",
-        "title": "No audio",
-        "transcript": "",
-        "has_audio": false,
-        "next_version": 0,
-        "current_version": 0,
-        "current_summary_id": null
-      }
-    ],
+  "captured_at": "2026-11-19T15:45:03.682Z",
+  "sender_db": {
     "jobs": [
       {
-        "job_id": "1bca12d6-5bed-4e73-b66c-82529b64c1e2",
-        "message_id": "2bdd2091-2949-4807-884a-9b08da6d8e42",
-        "video_id": "V1",
+        "job_id": "J42",
+        "video_id": "V7",
         "version": 1,
-        "correlation_id": "841a209a-eff4-49c3-932b-56eae7a9d997",
-        "options": {},
-        "status": "DONE",
-        "replay_count": 0,
-        "last_error_type": null,
-        "created_at": "2026-11-16T15:08:55.837Z",
-        "completed_at": "2026-11-16T15:09:08.282Z"
-      },
-      {
-        "job_id": "6e04d490-e31d-42fb-bb60-746f8051af75",
-        "message_id": "ef731fd9-2831-4cf6-8b09-bb7203f0fda3",
-        "video_id": "V1",
-        "version": 4,
-        "correlation_id": "6d5cbe22-fdf9-4c2c-ade8-5ebf077aa0c1",
-        "options": {},
-        "status": "DONE",
-        "replay_count": 0,
-        "last_error_type": null,
-        "created_at": "2026-11-16T15:08:55.864Z",
-        "completed_at": "2026-11-16T15:09:10.052Z"
-      },
-      {
-        "job_id": "7eb6a740-f7be-4a58-af96-7f9d7d08b94b",
-        "message_id": "14e02116-af60-42ae-a10d-7e587d536a4f",
-        "video_id": "V1",
-        "version": 6,
-        "correlation_id": "ab4c5b88-b3a1-4985-a8bb-ee4dcc407fa0",
-        "options": {},
-        "status": "QUEUED",
-        "replay_count": 0,
-        "last_error_type": null,
-        "created_at": "2026-11-16T15:08:58.569Z",
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 1, job J42).",
+        "status": "READY",
+        "created_at": "2026-11-19T15:45:03.033Z",
         "completed_at": null
       },
       {
-        "job_id": "9896ad67-1521-4a04-a0e6-49cc24ffd9be",
-        "message_id": "eac95fb6-bce9-4711-94ad-af96269ef52f",
-        "video_id": "V1",
-        "version": 5,
-        "correlation_id": "f73d4255-5b36-4068-bc6b-093d6971dd52",
-        "options": {},
-        "status": "DONE",
-        "replay_count": 0,
-        "last_error_type": null,
-        "created_at": "2026-11-16T15:08:55.872Z",
-        "completed_at": "2026-11-16T15:09:10.375Z"
-      },
-      {
-        "job_id": "a21b5afe-fab3-43b4-86c2-d118b0d14e51",
-        "message_id": "74629745-ac74-4261-a1ff-2a1e34b0a0ca",
-        "video_id": "V1",
+        "job_id": "J43",
+        "video_id": "V7",
         "version": 2,
-        "correlation_id": "0f51e5bc-150a-4b17-adda-4ce93097d4e9",
-        "options": {},
-        "status": "DONE",
-        "replay_count": 0,
-        "last_error_type": null,
-        "created_at": "2026-11-16T15:08:55.848Z",
-        "completed_at": "2026-11-16T15:09:08.542Z"
-      },
-      {
-        "job_id": "f56de030-6c1c-4fb6-b0a8-d2c42f1cb362",
-        "message_id": "e9d82e27-387c-494f-8005-0e95cff75320",
-        "video_id": "V1",
-        "version": 3,
-        "correlation_id": "fcb024a2-8d3e-4612-88b0-90b20503d882",
-        "options": {},
-        "status": "DONE",
-        "replay_count": 0,
-        "last_error_type": null,
-        "created_at": "2026-11-16T15:08:55.856Z",
-        "completed_at": "2026-11-16T15:09:09.407Z"
+        "summary": "Nội dung tóm tắt giả định của video V7 (version 2, job J43).",
+        "status": "READY",
+        "created_at": "2026-11-19T15:45:03.033Z",
+        "completed_at": null
       }
     ],
-    "summaries": [
-      {
-        "summary_id": "649b9820-b486-45a0-9459-7f62648090db",
-        "job_id": "f56de030-6c1c-4fb6-b0a8-d2c42f1cb362",
-        "video_id": "V1",
-        "version": 3,
-        "content": "Broker tiếp nhận công việc thông qua cơ chế xác nhận từ nhà phát hành (publisher confirm). Sau khi hoàn tất quá trình lưu trữ (commit), worker sẽ gửi tín hiệu xác nhận (ack) lại cho hệ thống.",
-        "created_at": "2026-11-16T15:09:09.406Z"
-      },
-      {
-        "summary_id": "a0876c19-9bef-4796-8a63-fef48f8f1589",
-        "job_id": "1bca12d6-5bed-4e73-b66c-82529b64c1e2",
-        "video_id": "V1",
-        "version": 1,
-        "content": "Broker nhận công việc thông qua cơ chế xác nhận từ nhà xuất bản (publisher confirm). Trong khi đó, worker thực hiện phản hồi (ack) sau khi đã hoàn tất quá trình commit dữ liệu.",
-        "created_at": "2026-11-16T15:09:08.280Z"
-      },
-      {
-        "summary_id": "cbe88516-8ea4-4df5-befb-394a3657107c",
-        "job_id": "a21b5afe-fab3-43b4-86c2-d118b0d14e51",
-        "video_id": "V1",
-        "version": 2,
-        "content": "Broker nhận công việc thông qua cơ chế xác nhận từ nhà xuất bản (publisher confirm). Trong khi đó, worker thực hiện việc xác nhận hoàn thành (ack) sau khi đã commit dữ liệu.",
-        "created_at": "2026-11-16T15:09:08.540Z"
-      },
-      {
-        "summary_id": "f7c9c1f0-5651-429f-aa39-6d61f47f7e3d",
-        "job_id": "9896ad67-1521-4a04-a0e6-49cc24ffd9be",
-        "video_id": "V1",
-        "version": 5,
-        "content": "Broker xử lý công việc thông qua cơ chế xác nhận từ nhà phát hành (publisher confirm). Trong khi đó, worker thực hiện phản hồi (ack) sau khi đã hoàn tất quá trình commit dữ liệu.",
-        "created_at": "2026-11-16T15:09:10.374Z"
-      },
-      {
-        "summary_id": "fc1248fd-37e4-4eaa-b529-8fd16759e489",
-        "job_id": "6e04d490-e31d-42fb-bb60-746f8051af75",
-        "video_id": "V1",
-        "version": 4,
-        "content": "Broker tiếp nhận công việc thông qua cơ chế xác nhận từ nhà xuất bản (publisher confirm). Các worker sẽ gửi phản hồi (ack) sau khi đã hoàn tất việc commit dữ liệu.",
-        "created_at": "2026-11-16T15:09:10.051Z"
-      }
-    ],
-    "processing_attempts": [
-      {
-        "attempt_id": "1",
-        "job_id": "1bca12d6-5bed-4e73-b66c-82529b64c1e2",
-        "message_id": "2bdd2091-2949-4807-884a-9b08da6d8e42",
-        "attempt_no": 1,
-        "replay_generation": 0,
-        "worker_id": "worker-1",
-        "redelivered": true,
-        "started_at": "2026-11-16T15:09:07.033Z",
-        "finished_at": "2026-11-16T15:09:08.283Z",
-        "outcome": "SUCCEEDED",
-        "error_type": null
-      },
-      {
-        "attempt_id": "2",
-        "job_id": "a21b5afe-fab3-43b4-86c2-d118b0d14e51",
-        "message_id": "74629745-ac74-4261-a1ff-2a1e34b0a0ca",
-        "attempt_no": 1,
-        "replay_generation": 0,
-        "worker_id": "worker-2",
-        "redelivered": true,
-        "started_at": "2026-11-16T15:09:07.077Z",
-        "finished_at": "2026-11-16T15:09:08.543Z",
-        "outcome": "SUCCEEDED",
-        "error_type": null
-      },
-      {
-        "attempt_id": "3",
-        "job_id": "f56de030-6c1c-4fb6-b0a8-d2c42f1cb362",
-        "message_id": "e9d82e27-387c-494f-8005-0e95cff75320",
-        "attempt_no": 1,
-        "replay_generation": 0,
-        "worker_id": "worker-1",
-        "redelivered": true,
-        "started_at": "2026-11-16T15:09:08.288Z",
-        "finished_at": "2026-11-16T15:09:09.407Z",
-        "outcome": "SUCCEEDED",
-        "error_type": null
-      },
-      {
-        "attempt_id": "4",
-        "job_id": "6e04d490-e31d-42fb-bb60-746f8051af75",
-        "message_id": "ef731fd9-2831-4cf6-8b09-bb7203f0fda3",
-        "attempt_no": 1,
-        "replay_generation": 0,
-        "worker_id": "worker-2",
-        "redelivered": true,
-        "started_at": "2026-11-16T15:09:08.547Z",
-        "finished_at": "2026-11-16T15:09:10.053Z",
-        "outcome": "SUCCEEDED",
-        "error_type": null
-      },
-      {
-        "attempt_id": "5",
-        "job_id": "9896ad67-1521-4a04-a0e6-49cc24ffd9be",
-        "message_id": "eac95fb6-bce9-4711-94ad-af96269ef52f",
-        "attempt_no": 1,
-        "replay_generation": 0,
-        "worker_id": "worker-1",
-        "redelivered": true,
-        "started_at": "2026-11-16T15:09:09.410Z",
-        "finished_at": "2026-11-16T15:09:10.375Z",
-        "outcome": "SUCCEEDED",
-        "error_type": null
-      }
-    ],
-    "replay_events": [],
-    "checkpoint_events": [],
-    "mock_calls": [
-      {
-        "call_id": "1",
-        "job_id": "1bca12d6-5bed-4e73-b66c-82529b64c1e2",
-        "call_no": 1,
-        "response_status": 200,
-        "started_at": "2026-11-16T15:09:07.090Z",
-        "finished_at": "2026-11-16T15:09:08.272Z"
-      },
-      {
-        "call_id": "2",
-        "job_id": "a21b5afe-fab3-43b4-86c2-d118b0d14e51",
-        "call_no": 1,
-        "response_status": 200,
-        "started_at": "2026-11-16T15:09:07.121Z",
-        "finished_at": "2026-11-16T15:09:08.524Z"
-      },
-      {
-        "call_id": "3",
-        "job_id": "f56de030-6c1c-4fb6-b0a8-d2c42f1cb362",
-        "call_no": 1,
-        "response_status": 200,
-        "started_at": "2026-11-16T15:09:08.293Z",
-        "finished_at": "2026-11-16T15:09:09.394Z"
-      },
-      {
-        "call_id": "4",
-        "job_id": "6e04d490-e31d-42fb-bb60-746f8051af75",
-        "call_no": 1,
-        "response_status": 200,
-        "started_at": "2026-11-16T15:09:08.552Z",
-        "finished_at": "2026-11-16T15:09:10.039Z"
-      },
-      {
-        "call_id": "5",
-        "job_id": "9896ad67-1521-4a04-a0e6-49cc24ffd9be",
-        "call_no": 1,
-        "response_status": 200,
-        "started_at": "2026-11-16T15:09:09.414Z",
-        "finished_at": "2026-11-16T15:09:10.370Z"
-      }
-    ],
-    "mock_faults": []
+    "outbox": [],
+    "delivery_attempts": [],
+    "replay_events": []
   },
-  "queues": [
-    {
-      "name": "summaries.main",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    },
-    {
-      "name": "summaries.retry.1000",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    },
-    {
-      "name": "summaries.dlq",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    },
-    {
-      "name": "summaries.retry.3000",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    },
-    {
-      "name": "summaries.retry.9000",
-      "messages_unacknowledged": 0,
-      "messages_ready": 0
-    }
-  ],
-  "dlq_messages": []
+  "receiver_db": {
+    "inbox": [
+      {
+        "source": "sender-lab",
+        "event_id": "E42",
+        "event_type": "summary.completed",
+        "schema_version": 1,
+        "raw_body": "{\"event_id\":\"E42\",\"type\":\"summary.completed\",\"schema_version\":1,\"occurred_at\":\"2026-11-19T03:00:00.000Z\",\"data\":{\"job_id\":\"J42\",\"video_id\":\"V7\",\"version\":1,\"summary\":\"Bản gốc cố định cho E42.\"}}",
+        "payload_hash": "a3b47c0f725989f7558158a20c4ff9dd4636ce013fd25570029104b2ef0b48b5",
+        "payload": {
+          "data": {
+            "job_id": "J42",
+            "summary": "Bản gốc cố định cho E42.",
+            "version": 1,
+            "video_id": "V7"
+          },
+          "type": "summary.completed",
+          "event_id": "E42",
+          "occurred_at": "2026-11-19T03:00:00.000Z",
+          "schema_version": 1
+        },
+        "status": "PROCESSED",
+        "received_at": "2026-11-19T15:45:03.563Z",
+        "processed_at": "2026-11-19T15:45:03.596Z",
+        "last_delivery_attempt": "F6-dup-1"
+      }
+    ],
+    "video_summaries": [
+      {
+        "video_id": "V7",
+        "version": 1,
+        "summary": "Bản gốc cố định cho E42.",
+        "applied_count": 1,
+        "source_event_id": "E42",
+        "updated_at": "2026-11-19T15:45:03.594Z"
+      }
+    ]
+  }
 }
